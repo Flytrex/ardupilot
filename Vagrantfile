@@ -15,6 +15,9 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.network "forwarded_port", guest: 5760, host: 5760
+  config.vm.network "private_network", ip: "192.168.50.4"
+
   config.ssh.forward_x11 = true
 
   # Provider-specific configuration so you can fine-tune various
