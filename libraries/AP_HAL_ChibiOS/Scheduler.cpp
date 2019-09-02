@@ -163,12 +163,12 @@ void Scheduler::boost_end(void)
  */
 void Scheduler::delay_microseconds_boost(uint16_t usec)
 {
-    if (in_main_thread()) {
+    if (!_priority_boosted && in_main_thread()) {
         set_high_priority();
         _priority_boosted = true;
+        _called_boost = true;
     }
     delay_microseconds(usec); //Suspends Thread for desired microseconds
-    _called_boost = true;
 }
 
 /*
@@ -251,7 +251,7 @@ void Scheduler::reboot(bool hold_in_bootloader)
     }
 #endif
 
-#ifndef NO_LOGGING
+#ifndef HAL_NO_LOGGING
     //stop logging
     if (AP_Logger::get_singleton()) {
         AP::logger().StopLogging();
@@ -261,7 +261,7 @@ void Scheduler::reboot(bool hold_in_bootloader)
     sdcard_stop();
 #endif
 
-#if defined(HAL_USE_RTC) && HAL_USE_RTC
+#if !defined(NO_FASTBOOT)
     // setup RTC for fast reboot
     set_fast_reboot(hold_in_bootloader?RTC_BOOT_HOLD:RTC_BOOT_FAST);
 #endif
@@ -330,6 +330,7 @@ void Scheduler::_timer_thread(void *arg)
     }
 }
 
+#ifndef HAL_NO_MONITOR_THREAD
 void Scheduler::_monitor_thread(void *arg)
 {
     Scheduler *sched = (Scheduler *)arg;
@@ -369,6 +370,7 @@ void Scheduler::_monitor_thread(void *arg)
         }
     }
 }
+#endif // HAL_NO_MONITOR_THREAD
 
 void Scheduler::_rcin_thread(void *arg)
 {

@@ -188,7 +188,7 @@ void AnalogIn::adccallback(ADCDriver *adcp)
 {
     const adcsample_t *buffer = samples;
 
-    cacheBufferInvalidate(buffer, sizeof(adcsample_t)*ADC_DMA_BUF_DEPTH*ADC_GRP1_NUM_CHANNELS);
+    stm32_cacheBufferInvalidate(buffer, sizeof(adcsample_t)*ADC_DMA_BUF_DEPTH*ADC_GRP1_NUM_CHANNELS);
     for (uint8_t i = 0; i < ADC_DMA_BUF_DEPTH; i++) {
         for (uint8_t j = 0; j < ADC_GRP1_NUM_CHANNELS; j++) { 
             sample_sum[j] += *buffer++;
@@ -296,6 +296,11 @@ void AnalogIn::_timer_tick(void)
             // record the Vcc value for later use in
             // voltage_average_ratiometric()
             _board_voltage = buf_adc[i] * pin_config[i].scaling;
+        }
+#endif
+#ifdef FMU_SERVORAIL_ADC_CHAN
+        if (pin_config[i].channel == FMU_SERVORAIL_ADC_CHAN) {
+           _servorail_voltage = buf_adc[i] * pin_config[i].scaling;
         }
 #endif
     }
