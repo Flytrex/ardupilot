@@ -858,5 +858,7 @@ bool AP_Arming_Copter::disarm()
 
     copter.ap.in_arming_delay = false;
 
+    copter.parachute.enabled(true);
+
     return true;
 }

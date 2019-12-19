@@ -104,6 +104,7 @@ private:
     bool        _is_flying:1;            // true if the vehicle is flying
     float       _sink_rate;              // vehicle sink rate in m/s
     uint32_t    _sink_time;              // time that the vehicle exceeded critical sink rate
+    uint32_t    _tilt_time;              // time that the vehicle exceeded critical tilt rate
 };
 
 namespace AP {

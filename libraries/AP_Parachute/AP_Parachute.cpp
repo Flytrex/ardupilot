@@ -7,6 +7,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h>
+#include <AP_InertialNav/AP_InertialNav.h>     // ArduPilot Mega inertial navigation library
 
 extern const AP_HAL::HAL& hal;
 
@@ -82,6 +83,7 @@ void AP_Parachute::enabled(bool on_off)
 
     // clear release_time
     _release_time = 0;
+    _release_initiated = false;
 
     AP::logger().Write_Event(_enabled ? LogEvent::PARACHUTE_ENABLED : LogEvent::PARACHUTE_DISABLED);
 }
@@ -94,7 +96,7 @@ void AP_Parachute::release()
         return;
     }
 
-    gcs().send_text(MAV_SEVERITY_INFO,"Parachute: Released");
+    gcs().send_text(MAV_SEVERITY_CRITICAL,"Parachute: Released");
     AP::logger().Write_Event(LogEvent::PARACHUTE_RELEASED);
 
     // set release time to current system time
@@ -115,13 +117,37 @@ void AP_Parachute::update()
     if (_enabled <= 0) {
         return;
     }
-    // check if the plane is sinking too fast for more than a second and release parachute
+
     uint32_t time = AP_HAL::millis();
-    if((_critical_sink > 0) && (_sink_rate > _critical_sink) && !_release_initiated && _is_flying) {
+
+    // YB
+    // CHUTE_DELAY_MS param will be used to define how much time (in millis) of freefall before parachute will trigger.
+    // CHUTE_ALT_MIN param will be used to define tilt degrees for parachute triggering (max roll and max pitch).
+    const AP_AHRS &ahrs_yb = AP::ahrs();
+    int32_t pitch = labs(roundf(ahrs_yb.pitch_sensor / 100.0)); // attitude pitch in degrees
+    int32_t roll = labs(roundf(ahrs_yb.roll_sensor / 100.0));   // attitude roll in degrees
+    bool critical_tilt = (roll > _alt_min) || (pitch > _alt_min);
+    if (critical_tilt && !_release_initiated) {
+        if (_tilt_time == 0) {
+            _tilt_time = AP_HAL::millis();
+        }
+        if((time - _tilt_time) >= 100) {
+            gcs().send_text(MAV_SEVERITY_INFO,"pitch %ld, roll %ld, critical angle %d, time 100ms", pitch, roll, (int)_alt_min);
+            release();            
+        }
+    } else {
+        _tilt_time = 0;
+    }
+
+    // check if the plane is sinking too fast for more than a second and release parachute
+    AP_InertialNav_NavEKF inertial_nav(AP::ahrs_navekf());
+    set_sink_rate(-inertial_nav.get_velocity_z() * 0.01);
+    if((_critical_sink > 0) && (_sink_rate > _critical_sink) && !_release_initiated /*&& _is_flying*/) {  // guyg
         if(_sink_time == 0) {
             _sink_time = AP_HAL::millis();
         }
-        if((time - _sink_time) >= 1000) {
+        if((time - _sink_time) >= _delay_ms) {  // YB - changed from 1000 ms to _delay_ms
+            gcs().send_text(MAV_SEVERITY_INFO,"sink time %ld ms - more than %d ms", time - _sink_time, (int)_delay_ms);
             release();
         }
     } else {

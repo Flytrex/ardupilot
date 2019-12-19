@@ -166,14 +166,14 @@ void Copter::parachute_check()
         return;
     }
 
-    // call update to give parachute a chance to move servo or relay back to off position
-    parachute.update();
-
     // return immediately if motors are not armed or pilot's throttle is above zero
     if (!motors->armed()) {
         control_loss_count = 0;
         return;
     }
+    
+    // call update to give parachute a chance to move servo or relay back to off position
+    parachute.update();
 
     // return immediately if we are not in an angle stabilize flight mode or we are flipping
     if (control_mode == Mode::Number::ACRO || control_mode == Mode::Number::FLIP) {
