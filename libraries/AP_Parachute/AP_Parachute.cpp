@@ -139,7 +139,7 @@ void AP_Parachute::update()
     }
 
     static long notification_reducer = 0;
-    if(released && ((notification_reducer % 1000) == 0)) {
+    if(_release_initiated && ((notification_reducer % 1000) == 0)) {
         gcs().send_text(MAV_SEVERITY_CRITICAL, "Parachute Released!");
     }
     ++notification_reducer;
