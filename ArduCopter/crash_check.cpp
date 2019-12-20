@@ -172,6 +172,9 @@ void Copter::parachute_check()
         return;
     }
     
+    // pass sink rate to parachute library
+    parachute.set_sink_rate(-inertial_nav.get_velocity_z() * 0.01);
+
     // call update to give parachute a chance to move servo or relay back to off position
     parachute.update();
 
@@ -225,9 +228,6 @@ void Copter::parachute_check()
         // release parachute
         parachute_release();
     }
-
-    // pass sink rate to parachute library
-    parachute.set_sink_rate(-inertial_nav.get_velocity_z() * 0.01);
 }
 
 // parachute_release - trigger the release of the parachute, disarm the motors and notify the user

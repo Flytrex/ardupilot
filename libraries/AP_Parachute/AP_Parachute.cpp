@@ -7,7 +7,6 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h>
-#include <AP_InertialNav/AP_InertialNav.h>     // ArduPilot Mega inertial navigation library
 
 extern const AP_HAL::HAL& hal;
 
@@ -139,15 +138,19 @@ void AP_Parachute::update()
         _tilt_time = 0;
     }
 
+    static long notification_reducer = 0;
+    if(released && ((notification_reducer % 1000) == 0)) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Parachute Released!");
+    }
+    ++notification_reducer;
+
     // check if the plane is sinking too fast for more than a second and release parachute
-    AP_InertialNav_NavEKF inertial_nav(AP::ahrs_navekf());
-    set_sink_rate(-inertial_nav.get_velocity_z() * 0.01);
     if((_critical_sink > 0) && (_sink_rate > _critical_sink) && !_release_initiated /*&& _is_flying*/) {  // guyg
         if(_sink_time == 0) {
             _sink_time = AP_HAL::millis();
         }
         if((time - _sink_time) >= _delay_ms) {  // YB - changed from 1000 ms to _delay_ms
-            gcs().send_text(MAV_SEVERITY_INFO,"sink time %ld ms - more than %d ms", time - _sink_time, (int)_delay_ms);
+            gcs().send_text(MAV_SEVERITY_INFO, "sink time %ld ms - more than %d ms", time - _sink_time, (int)_delay_ms);
             release();
         }
     } else {
