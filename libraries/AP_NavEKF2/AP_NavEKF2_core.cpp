@@ -624,6 +624,23 @@ void NavEKF2_core::UpdateFilter(bool predict)
         !hal.util->get_soft_armed()) {
         // we've been unhealthy for 5 seconds after being healthy, reset the filter
         gcs().send_text(MAV_SEVERITY_WARNING, "EKF2 IMU%u forced reset",(unsigned)imu_index);
+        gcs().send_text(MAV_SEVERITY_WARNING, "attitude=%s", filterStatus.flags.attitude ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "horiz_vel=%s", filterStatus.flags.horiz_vel ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "vert_vel=%s", filterStatus.flags.vert_vel ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "horiz_pos_rel=%s", filterStatus.flags.horiz_pos_rel ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "horiz_pos_abs=%s", filterStatus.flags.horiz_pos_abs ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "vert_pos=%s", filterStatus.flags.vert_pos ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "terrain_alt=%s", filterStatus.flags.terrain_alt ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "const_pos_mode=%s", filterStatus.flags.const_pos_mode ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "pred_horiz_pos_rel=%s", filterStatus.flags.pred_horiz_pos_rel ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "pred_horiz_pos_abs=%s", filterStatus.flags.pred_horiz_pos_abs ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "takeoff_detected=%s", filterStatus.flags.takeoff_detected ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "takeoff=%s", filterStatus.flags.takeoff ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "touchdown=%s", filterStatus.flags.touchdown ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "using_gps=%s", filterStatus.flags.using_gps ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "gps_glitching=%s", filterStatus.flags.gps_glitching ? "true" : "false");
+        gcs().send_text(MAV_SEVERITY_WARNING, "gps_quality_good=%s", filterStatus.flags.gps_quality_good ? "true" : "false");
+
         last_filter_ok_ms = 0;
         statesInitialised = false;
         InitialiseFilterBootstrap();
