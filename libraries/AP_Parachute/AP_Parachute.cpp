@@ -138,12 +138,6 @@ void AP_Parachute::update()
         _tilt_time = 0;
     }
 
-    static long notification_reducer = 0;
-    if(_release_initiated && ((notification_reducer % 250) == 0)) {
-        gcs().send_text(MAV_SEVERITY_CRITICAL, "Parachute Released!");
-    }
-    ++notification_reducer;
-
     // check if the plane is sinking too fast for more than a second and release parachute
     if((_critical_sink > 0) && (_sink_rate > _critical_sink) && !_release_initiated /*&& _is_flying*/) {  // guyg
         if(_sink_time == 0) {
