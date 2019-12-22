@@ -62,14 +62,14 @@ const AP_Param::GroupInfo AP_Parachute::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("DELAY_MS", 5, AP_Parachute, _delay_ms, AP_PARACHUTE_RELEASE_DELAY_MS),
     
-    // @Param: CRT_SINK
+    // @Param: SINK_CRT
     // @DisplayName: Critical sink speed rate in m/s to trigger emergency parachute
     // @Description: Release parachute when critical sink rate is reached
     // @Range: 0 15
     // @Units: m/s
     // @Increment: 1
     // @User: Standard
-    AP_GROUPINFO("CRT_SINK", 6, AP_Parachute, _critical_sink, AP_PARACHUTE_CRITICAL_SINK_DEFAULT),
+    AP_GROUPINFO("SINK_CRT", 6, AP_Parachute, _critical_sink, AP_PARACHUTE_CRITICAL_SINK_DEFAULT),
     
     // @Param: SINK_TIME
     // @DisplayName: When critical sink speed rate for more than critical sink time - trigger emergency parachute
@@ -80,14 +80,14 @@ const AP_Param::GroupInfo AP_Parachute::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("SINK_TIME", 7, AP_Parachute, _critical_sink_time, AP_PARACHUTE_CRITICAL_SINK_TIME_DEFAULT),
     
-    // @Param: CRT_FLIP
+    // @Param: FLIP_CRT
     // @DisplayName: Critical flip degree to trigger emergency parachute
     // @Description: Release parachute when critical flip rate is reached
     // @Range: 0 180
     // @Units: degrees
     // @Increment: 1
     // @User: Standard
-    AP_GROUPINFO("CRT_FLIP", 8, AP_Parachute, _critical_flip, AP_PARACHUTE_CRITICAL_FLIP_DEFAULT),
+    AP_GROUPINFO("FLIP_CRT", 8, AP_Parachute, _critical_flip, AP_PARACHUTE_CRITICAL_FLIP_DEFAULT),
     
     // @Param: FLIP_TIME
     // @DisplayName: When in critical flip for more than critical flip time - trigger emergency parachute
@@ -98,14 +98,14 @@ const AP_Param::GroupInfo AP_Parachute::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("FLIP_TIME", 9, AP_Parachute, _critical_flip_time, AP_PARACHUTE_CRITICAL_FLIP_TIME_DEFAULT),
 
-    // @Param: CRT_YAW
+    // @Param: YAW_CRT
     // @DisplayName: Critical yaw rate in degrees/second to trigger emergency parachute
     // @Description: Release parachute when critical yaw rate is reached
     // @Range: 0 720
     // @Units: degrees/second
     // @Increment: 1
     // @User: Standard
-    AP_GROUPINFO("CRT_YAW", 10, AP_Parachute, _critical_yaw, AP_PARACHUTE_CRITICAL_YAW_DEFAULT),
+    AP_GROUPINFO("YAW_CRT", 10, AP_Parachute, _critical_yaw, AP_PARACHUTE_CRITICAL_YAW_DEFAULT),
     
     // @Param: YAW_TIME
     // @DisplayName: When in critical yaw for more than critical yaw time - trigger emergency parachute

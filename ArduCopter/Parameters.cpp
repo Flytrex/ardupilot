@@ -481,7 +481,7 @@ const AP_Param::Info Copter::var_info[] = {
 #if PARACHUTE == ENABLED
 	// @Group: CHUTE_
     // @Path: ../libraries/AP_Parachute/AP_Parachute.cpp
-    GOBJECT(parachute,		"CHUTE_", AP_Parachute),
+    GOBJECT(parachute,		"FTS_", AP_Parachute),
 #endif
 
     // @Group: LGR_
