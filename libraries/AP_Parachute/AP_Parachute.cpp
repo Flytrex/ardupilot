@@ -71,7 +71,51 @@ const AP_Param::GroupInfo AP_Parachute::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("CRT_SINK", 6, AP_Parachute, _critical_sink, AP_PARACHUTE_CRITICAL_SINK_DEFAULT),
     
+    // @Param: SINK_TIME
+    // @DisplayName: When critical sink speed rate for more than critical sink time - trigger emergency parachute
+    // @Description: Release parachute when critical sink rate is reached for more than critical sink time
+    // @Range: 0 5000
+    // @Units: ms
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("SINK_TIME", 7, AP_Parachute, _critical_sink_time, AP_PARACHUTE_CRITICAL_SINK_TIME_DEFAULT),
     
+    // @Param: CRT_FLIP
+    // @DisplayName: Critical flip degree to trigger emergency parachute
+    // @Description: Release parachute when critical flip rate is reached
+    // @Range: 0 180
+    // @Units: degrees
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("CRT_FLIP", 8, AP_Parachute, _critical_flip, AP_PARACHUTE_CRITICAL_FLIP_DEFAULT),
+    
+    // @Param: FLIP_TIME
+    // @DisplayName: When in critical flip for more than critical flip time - trigger emergency parachute
+    // @Description: Release parachute when critical flip rate is reached for more than critical flip time
+    // @Range: 0 5000
+    // @Units: ms
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("FLIP_TIME", 9, AP_Parachute, _critical_flip_time, AP_PARACHUTE_CRITICAL_FLIP_TIME_DEFAULT),
+
+    // @Param: CRT_YAW
+    // @DisplayName: Critical yaw rate in degrees/second to trigger emergency parachute
+    // @Description: Release parachute when critical yaw rate is reached
+    // @Range: 0 720
+    // @Units: degrees/second
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("CRT_YAW", 10, AP_Parachute, _critical_yaw, AP_PARACHUTE_CRITICAL_YAW_DEFAULT),
+    
+    // @Param: YAW_TIME
+    // @DisplayName: When in critical yaw for more than critical yaw time - trigger emergency parachute
+    // @Description: Release parachute when critical yaw rate is reached for more than critical yaw time
+    // @Range: 0 5000
+    // @Units: ms
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("YAW_TIME", 11, AP_Parachute, _critical_yaw_time, AP_PARACHUTE_CRITICAL_YAW_TIME_DEFAULT),
+
     AP_GROUPEND
 };
 
@@ -119,19 +163,29 @@ void AP_Parachute::update()
 
     uint32_t time = AP_HAL::millis();
 
-    // YB
-    // CHUTE_DELAY_MS param will be used to define how much time (in millis) of freefall before parachute will trigger.
-    // CHUTE_ALT_MIN param will be used to define tilt degrees for parachute triggering (max roll and max pitch).
     const AP_AHRS &ahrs_yb = AP::ahrs();
+    int32_t yaw_rate = labs(roundf(ToDeg(ahrs_yb.get_yaw_rate_earth())));
+    if ((_critical_yaw > 0) && (yaw_rate > _critical_yaw) && !_release_initiated) {
+        if (_yaw_time == 0) {
+            _yaw_time = AP_HAL::millis();
+        }
+        if ((time - _yaw_time) >= _critical_yaw_time) {
+            gcs().send_text(MAV_SEVERITY_INFO, "yaw_rate %ld, time %ld", yaw_rate, time - _yaw_time);
+            release();
+        }
+    } else {
+        _yaw_time = 0;
+    }
+
     int32_t pitch = labs(roundf(ahrs_yb.pitch_sensor / 100.0)); // attitude pitch in degrees
     int32_t roll = labs(roundf(ahrs_yb.roll_sensor / 100.0));   // attitude roll in degrees
-    bool critical_tilt = (roll > _alt_min) || (pitch > _alt_min);
-    if (critical_tilt && !_release_initiated) {
+    bool critical_tilt = (roll > _critical_flip) || (pitch > _critical_flip);
+    if ((_critical_flip > 0) && critical_tilt && !_release_initiated) {
         if (_tilt_time == 0) {
             _tilt_time = AP_HAL::millis();
         }
-        if((time - _tilt_time) >= 100) {
-            gcs().send_text(MAV_SEVERITY_INFO,"pitch %ld, roll %ld, critical angle %d, time 100ms", pitch, roll, (int)_alt_min);
+        if((time - _tilt_time) >= _critical_flip_time) {
+            gcs().send_text(MAV_SEVERITY_INFO, "pitch %ld, roll %ld, critical angle %d, time %lu ms", pitch, roll, (int)_critical_flip, time - _tilt_time);
             release();            
         }
     } else {
@@ -139,12 +193,12 @@ void AP_Parachute::update()
     }
 
     // check if the plane is sinking too fast for more than a second and release parachute
-    if((_critical_sink > 0) && (_sink_rate > _critical_sink) && !_release_initiated /*&& _is_flying*/) {  // guyg
+    if((_critical_sink > 0) && (_sink_rate > _critical_sink) && !_release_initiated) {
         if(_sink_time == 0) {
             _sink_time = AP_HAL::millis();
         }
-        if((time - _sink_time) >= _delay_ms) {  // YB - changed from 1000 ms to _delay_ms
-            gcs().send_text(MAV_SEVERITY_INFO, "sink time %ld ms - more than %d ms", time - _sink_time, (int)_delay_ms);
+        if((time - _sink_time) >= _critical_sink_time) {
+            gcs().send_text(MAV_SEVERITY_INFO, "sink time %ld ms - more than %d ms", time - _sink_time, (int)_critical_sink_time);
             release();
         }
     } else {

@@ -20,7 +20,12 @@
 
 #define AP_PARACHUTE_ALT_MIN_DEFAULT            10     // default min altitude the vehicle should have before parachute is released
 
-#define AP_PARACHUTE_CRITICAL_SINK_DEFAULT      0    // default critical sink speed in m/s to trigger emergency parachute
+#define AP_PARACHUTE_CRITICAL_SINK_DEFAULT      5    // default critical sink speed in m/s to trigger emergency parachute
+#define AP_PARACHUTE_CRITICAL_SINK_TIME_DEFAULT 250  // default critical sink time in ms to trigger emergency parachute
+#define AP_PARACHUTE_CRITICAL_FLIP_DEFAULT      60   // default critical flip in degrees to trigger emergency parachute
+#define AP_PARACHUTE_CRITICAL_FLIP_TIME_DEFAULT 250  // default critical flip time in ms to trigger emergency parachute
+#define AP_PARACHUTE_CRITICAL_YAW_DEFAULT       300  // default critical yaw in degrees/second to trigger emergency parachute
+#define AP_PARACHUTE_CRITICAL_YAW_TIME_DEFAULT  250  // default critical yaw time in ms to trigger emergency parachute
 
 /// @class	AP_Parachute
 /// @brief	Class managing the release of a parachute
@@ -94,6 +99,11 @@ private:
     AP_Int16    _alt_min;       // min altitude the vehicle should have before parachute is released
     AP_Int16    _delay_ms;      // delay before chute release for motors to stop
     AP_Float    _critical_sink;      // critical sink rate to trigger emergency parachute
+    AP_Float    _critical_sink_time; // critical sink time to trigger emergency parachute
+    AP_Float    _critical_flip;      // critical flip rate to trigger emergency parachute
+    AP_Float    _critical_flip_time; // critical flip time to trigger emergency parachute
+    AP_Float    _critical_yaw;       // critical yaw rate to trigger emergency parachute
+    AP_Float    _critical_yaw_time;  // critical yaw time to trigger emergency parachute
 
     // internal variables
     AP_Relay   &_relay;         // pointer to relay object from the base class Relay.
@@ -105,6 +115,7 @@ private:
     float       _sink_rate;              // vehicle sink rate in m/s
     uint32_t    _sink_time;              // time that the vehicle exceeded critical sink rate
     uint32_t    _tilt_time;              // time that the vehicle exceeded critical tilt rate
+    uint32_t    _yaw_time;               // time that the vehicle exceeded critical yaw rate
 };
 
 namespace AP {
