@@ -161,7 +161,7 @@ void AP_Parachute::servo_off()
     }
 }
 
-bool AP_Parachute::_release_by_condition(const AP_Float& critical_condition, const AP_Float& critical_condition_time, const int32_t& current_condition_value, uint32_t& condition_time)
+bool AP_Parachute::_release_by_condition(const AP_Float& critical_condition, const AP_Float& critical_condition_time, const float& current_condition_value, uint32_t& condition_time)
 {
     uint32_t time = AP_HAL::millis();
     if ((critical_condition > 0) && (current_condition_value > critical_condition) && !_release_initiated) {
@@ -188,7 +188,7 @@ void AP_Parachute::update()
 
     const uint32_t time = AP_HAL::millis();
     const AP_AHRS &ahrs_yb = AP::ahrs();
-    
+
     const int32_t yaw_rate = labs(roundf(ToDeg(ahrs_yb.get_yaw_rate_earth())));
     if (_release_by_condition(_critical_yaw, _critical_yaw_time, yaw_rate, _yaw_time)) {
         gcs().send_text(MAV_SEVERITY_INFO, "yaw_rate %ld, time %ld ms", yaw_rate, time - _yaw_time);
@@ -204,9 +204,8 @@ void AP_Parachute::update()
         gcs().send_text(MAV_SEVERITY_INFO, "roll %ld, critical angle %d, time %lu ms", roll, (int)_critical_flip, time - _flip_time);
     }
 
-    const int32_t sink_rate = roundf(_sink_rate);
-    if (_release_by_condition(_critical_sink, _critical_sink_time, sink_rate, _sink_time)) {
-        gcs().send_text(MAV_SEVERITY_INFO, "sink %ld, time %ld ms", sink_rate, time - _sink_time);
+    if (_release_by_condition(_critical_sink, _critical_sink_time, _sink_rate, _sink_time)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "sink %f, time %ld ms", _sink_rate, time - _sink_time);
     }
     
     // calc time since release

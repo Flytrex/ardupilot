@@ -122,7 +122,7 @@ private:
 
     // get a condition critical value (yaw, tilt, sink, etc.), it's max time allowed in critical condition, it's current value and it's time in critical condition
     // returns true if parachute is released by condition and false otherwise
-    bool _release_by_condition(const AP_Float& critical_condition, const AP_Float& critical_condition_time, const int32_t& current_condition_value, uint32_t& condition_time);
+    bool _release_by_condition(const AP_Float& critical_condition, const AP_Float& critical_condition_time, const float& current_condition_value, uint32_t& condition_time);
 };
 
 namespace AP {
