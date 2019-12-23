@@ -161,6 +161,23 @@ void AP_Parachute::servo_off()
     }
 }
 
+bool AP_Parachute::_release_by_condition(const AP_Float& critical_condition, const AP_Float& critical_condition_time, const int32_t& current_condition_value, uint32_t& condition_time)
+{
+    uint32_t time = AP_HAL::millis();
+    if ((critical_condition > 0) && (current_condition_value > critical_condition) && !_release_initiated) {
+        if (condition_time == 0) {
+            condition_time = AP_HAL::millis();
+        }
+        if ((time - condition_time) >= critical_condition_time) {
+            release();
+            return true;
+        }
+    } else {
+        condition_time = 0;
+    }
+    return false;
+}
+
 /// update - shuts off the trigger should be called at about 10hz
 void AP_Parachute::update()
 {
@@ -169,48 +186,24 @@ void AP_Parachute::update()
         return;
     }
 
-    uint32_t time = AP_HAL::millis();
-
     const AP_AHRS &ahrs_yb = AP::ahrs();
-    int32_t yaw_rate = labs(roundf(ToDeg(ahrs_yb.get_yaw_rate_earth())));
-    if ((_critical_yaw > 0) && (yaw_rate > _critical_yaw) && !_release_initiated) {
-        if (_yaw_time == 0) {
-            _yaw_time = AP_HAL::millis();
-        }
-        if ((time - _yaw_time) >= _critical_yaw_time) {
-            gcs().send_text(MAV_SEVERITY_INFO, "yaw_rate %ld, time %ld", yaw_rate, time - _yaw_time);
-            release();
-        }
-    } else {
-        _yaw_time = 0;
+    const int32_t yaw_rate = labs(roundf(ToDeg(ahrs_yb.get_yaw_rate_earth())));
+    if (_release_by_condition(_critical_yaw, _critical_yaw_time, yaw_rate, _yaw_time)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "yaw_rate %ld, time %ld", yaw_rate, AP_HAL::millis() - _yaw_time);
     }
 
-    int32_t pitch = labs(roundf(ahrs_yb.pitch_sensor / 100.0)); // attitude pitch in degrees
-    int32_t roll = labs(roundf(ahrs_yb.roll_sensor / 100.0));   // attitude roll in degrees
-    bool critical_tilt = (roll > _critical_flip) || (pitch > _critical_flip);
-    if ((_critical_flip > 0) && critical_tilt && !_release_initiated) {
-        if (_tilt_time == 0) {
-            _tilt_time = AP_HAL::millis();
-        }
-        if((time - _tilt_time) >= _critical_flip_time) {
-            gcs().send_text(MAV_SEVERITY_INFO, "pitch %ld, roll %ld, critical angle %d, time %lu ms", pitch, roll, (int)_critical_flip, time - _tilt_time);
-            release();            
-        }
-    } else {
-        _tilt_time = 0;
+    const int32_t pitch = labs(roundf(ahrs_yb.pitch_sensor / 100.0)); // attitude pitch in degrees
+    if (_release_by_condition(_critical_flip, _critical_flip_time, pitch, _flip_time)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "pitch %ld, critical angle %d, time %lu ms", pitch, (int)_critical_flip, AP_HAL::millis() - _flip_time);
     }
 
-    // check if the plane is sinking too fast for more than a second and release parachute
-    if((_critical_sink > 0) && (_sink_rate > _critical_sink) && !_release_initiated) {
-        if(_sink_time == 0) {
-            _sink_time = AP_HAL::millis();
-        }
-        if((time - _sink_time) >= _critical_sink_time) {
-            gcs().send_text(MAV_SEVERITY_INFO, "sink time %ld ms - more than %d ms", time - _sink_time, (int)_critical_sink_time);
-            release();
-        }
-    } else {
-        _sink_time = 0;
+    const int32_t roll = labs(roundf(ahrs_yb.roll_sensor / 100.0));   // attitude roll in degrees
+    if (_release_by_condition(_critical_flip, _critical_flip_time, roll, _flip_time)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "roll %ld, critical angle %d, time %lu ms", roll, (int)_critical_flip, AP_HAL::millis() - _flip_time);
+    }
+
+    if (_release_by_condition(_critical_sink, _critical_sink_time, _sink_rate, _sink_time)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "sink time %ld ms - more than %d ms", AP_HAL::millis() - _sink_time, (int)_critical_sink_time);
     }
     
     // calc time since release

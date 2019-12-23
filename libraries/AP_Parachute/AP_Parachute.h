@@ -117,8 +117,12 @@ private:
     bool        _is_flying:1;            // true if the vehicle is flying
     float       _sink_rate;              // vehicle sink rate in m/s
     uint32_t    _sink_time;              // time that the vehicle exceeded critical sink rate
-    uint32_t    _tilt_time;              // time that the vehicle exceeded critical tilt rate
+    uint32_t    _flip_time;              // time that the vehicle exceeded critical flip rate
     uint32_t    _yaw_time;               // time that the vehicle exceeded critical yaw rate
+
+    // get a condition critical value (yaw, tilt, sink, etc.), it's max time allowed in critical condition, it's current value and it's time in critical condition
+    // returns true if parachute is released by condition and false otherwise
+    bool _release_by_condition(const AP_Float& critical_condition, const AP_Float& critical_condition_time, const int32_t& current_condition_value, uint32_t& condition_time);
 };
 
 namespace AP {
