@@ -168,10 +168,12 @@ void Copter::parachute_check()
 
     // return immediately if motors are not armed or pilot's throttle is above zero
     if (!motors->armed()) {
+        // sending pwm signal
+        parachute.servo_off();
         control_loss_count = 0;
         return;
     }
-    
+
     // pass sink rate to parachute library
     parachute.set_sink_rate(-inertial_nav.get_velocity_z() * 0.01);
 

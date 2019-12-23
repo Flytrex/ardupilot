@@ -153,6 +153,14 @@ void AP_Parachute::release()
     AP_Notify::flags.parachute_release = 1;
 }
 
+// move servo to off position
+void AP_Parachute::servo_off()
+{
+    if (_release_type == AP_PARACHUTE_TRIGGER_TYPE_SERVO) {
+        SRV_Channels::set_output_pwm(SRV_Channel::k_parachute_release, _servo_off_pwm);
+    }
+}
+
 /// update - shuts off the trigger should be called at about 10hz
 void AP_Parachute::update()
 {

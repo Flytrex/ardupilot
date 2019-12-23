@@ -68,6 +68,9 @@ public:
     /// release_in_progress - true if the parachute release sequence is in progress
     bool release_in_progress() const { return _release_in_progress; }
     
+    // move servo to off position
+    void servo_off();
+
     /// update - shuts off the trigger should be called at about 10hz
     void update();
     
