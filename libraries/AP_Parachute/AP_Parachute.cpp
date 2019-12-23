@@ -186,24 +186,27 @@ void AP_Parachute::update()
         return;
     }
 
+    const uint32_t time = AP_HAL::millis();
     const AP_AHRS &ahrs_yb = AP::ahrs();
+    
     const int32_t yaw_rate = labs(roundf(ToDeg(ahrs_yb.get_yaw_rate_earth())));
     if (_release_by_condition(_critical_yaw, _critical_yaw_time, yaw_rate, _yaw_time)) {
-        gcs().send_text(MAV_SEVERITY_INFO, "yaw_rate %ld, time %ld", yaw_rate, AP_HAL::millis() - _yaw_time);
+        gcs().send_text(MAV_SEVERITY_INFO, "yaw_rate %ld, time %ld ms", yaw_rate, time - _yaw_time);
     }
 
     const int32_t pitch = labs(roundf(ahrs_yb.pitch_sensor / 100.0)); // attitude pitch in degrees
     if (_release_by_condition(_critical_flip, _critical_flip_time, pitch, _flip_time)) {
-        gcs().send_text(MAV_SEVERITY_INFO, "pitch %ld, critical angle %d, time %lu ms", pitch, (int)_critical_flip, AP_HAL::millis() - _flip_time);
+        gcs().send_text(MAV_SEVERITY_INFO, "pitch %ld, critical angle %d, time %lu ms", pitch, (int)_critical_flip, time - _flip_time);
     }
 
     const int32_t roll = labs(roundf(ahrs_yb.roll_sensor / 100.0));   // attitude roll in degrees
     if (_release_by_condition(_critical_flip, _critical_flip_time, roll, _flip_time)) {
-        gcs().send_text(MAV_SEVERITY_INFO, "roll %ld, critical angle %d, time %lu ms", roll, (int)_critical_flip, AP_HAL::millis() - _flip_time);
+        gcs().send_text(MAV_SEVERITY_INFO, "roll %ld, critical angle %d, time %lu ms", roll, (int)_critical_flip, time - _flip_time);
     }
 
-    if (_release_by_condition(_critical_sink, _critical_sink_time, _sink_rate, _sink_time)) {
-        gcs().send_text(MAV_SEVERITY_INFO, "sink time %ld ms - more than %d ms", AP_HAL::millis() - _sink_time, (int)_critical_sink_time);
+    const int32_t sink_rate = roundf(_sink_rate);
+    if (_release_by_condition(_critical_sink, _critical_sink_time, sink_rate, _sink_time)) {
+        gcs().send_text(MAV_SEVERITY_INFO, "sink %ld, time %ld ms", sink_rate, time - _sink_time);
     }
     
     // calc time since release
