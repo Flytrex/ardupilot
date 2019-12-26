@@ -1,6 +1,7 @@
 // auto generated bindings, don't manually edit
 #include "lua_generated_bindings.h"
 #include "lua_boxed_numerics.h"
+#include <RC_Channel/RC_Channel.h>
 #include <SRV_Channel/SRV_Channel.h>
 #include <AP_SerialLED/AP_SerialLED.h>
 #include <AP_Vehicle/AP_Vehicle.h>
@@ -513,6 +514,29 @@ const luaL_Reg Location_meta[] = {
     {NULL, NULL}
 };
 
+static int RC_Channels_get_pwm(lua_State *L) {
+    RC_Channels * ud = RC_Channels::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "rc not supported on this firmware");
+    }
+
+    binding_argcheck(L, 2);
+    const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
+    luaL_argcheck(L, ((raw_data_2 >= MAX(1, 0)) && (raw_data_2 <= MIN(NUM_RC_CHANNELS, UINT8_MAX))), 2, "argument out of range");
+    const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
+    uint16_t data_5003 = {};
+    const bool data = ud->get_pwm(
+            data_2,
+            data_5003);
+
+    if (data) {
+        lua_pushinteger(L, data_5003);
+    } else {
+        lua_pushnil(L);
+    }
+    return 1;
+}
+
 static int SRV_Channels_find_channel(lua_State *L) {
     SRV_Channels * ud = SRV_Channels::get_singleton();
     if (ud == nullptr) {
@@ -830,6 +854,34 @@ static int RangeFinder_num_sensors(lua_State *L) {
 
     lua_pushinteger(L, data);
     return 1;
+}
+
+static int AP_Notify_handle_rgb(lua_State *L) {
+    AP_Notify * ud = AP_Notify::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "notify not supported on this firmware");
+    }
+
+    binding_argcheck(L, 5);
+    const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
+    luaL_argcheck(L, ((raw_data_2 >= MAX(0, 0)) && (raw_data_2 <= MIN(UINT8_MAX, UINT8_MAX))), 2, "argument out of range");
+    const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
+    const lua_Integer raw_data_3 = luaL_checkinteger(L, 3);
+    luaL_argcheck(L, ((raw_data_3 >= MAX(0, 0)) && (raw_data_3 <= MIN(UINT8_MAX, UINT8_MAX))), 3, "argument out of range");
+    const uint8_t data_3 = static_cast<uint8_t>(raw_data_3);
+    const lua_Integer raw_data_4 = luaL_checkinteger(L, 4);
+    luaL_argcheck(L, ((raw_data_4 >= MAX(0, 0)) && (raw_data_4 <= MIN(UINT8_MAX, UINT8_MAX))), 4, "argument out of range");
+    const uint8_t data_4 = static_cast<uint8_t>(raw_data_4);
+    const lua_Integer raw_data_5 = luaL_checkinteger(L, 5);
+    luaL_argcheck(L, ((raw_data_5 >= MAX(0, 0)) && (raw_data_5 <= MIN(UINT8_MAX, UINT8_MAX))), 5, "argument out of range");
+    const uint8_t data_5 = static_cast<uint8_t>(raw_data_5);
+    ud->handle_rgb(
+            data_2,
+            data_3,
+            data_4,
+            data_5);
+
+    return 0;
 }
 
 static int AP_Notify_play_tune(lua_State *L) {
@@ -1201,6 +1253,29 @@ static int AP_GPS_num_sensors(lua_State *L) {
     const uint8_t data = ud->num_sensors();
 
     lua_pushinteger(L, data);
+    return 1;
+}
+
+static int AP_BattMonitor_get_cycle_count(lua_State *L) {
+    AP_BattMonitor * ud = AP_BattMonitor::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "battery not supported on this firmware");
+    }
+
+    binding_argcheck(L, 2);
+    const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
+    luaL_argcheck(L, ((raw_data_2 >= MAX(0, 0)) && (raw_data_2 <= MIN(ud->num_instances(), UINT8_MAX))), 2, "argument out of range");
+    const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
+    uint16_t data_5003 = {};
+    const bool data = ud->get_cycle_count(
+            data_2,
+            data_5003);
+
+    if (data) {
+        lua_pushinteger(L, data_5003);
+    } else {
+        lua_pushnil(L);
+    }
     return 1;
 }
 
@@ -1689,6 +1764,11 @@ static int AP_AHRS_get_roll(lua_State *L) {
     return 1;
 }
 
+const luaL_Reg RC_Channels_meta[] = {
+    {"get_pwm", RC_Channels_get_pwm},
+    {NULL, NULL}
+};
+
 const luaL_Reg SRV_Channels_meta[] = {
     {"find_channel", SRV_Channels_find_channel},
     {NULL, NULL}
@@ -1735,6 +1815,7 @@ const luaL_Reg RangeFinder_meta[] = {
 };
 
 const luaL_Reg AP_Notify_meta[] = {
+    {"handle_rgb", AP_Notify_handle_rgb},
     {"play_tune", AP_Notify_play_tune},
     {NULL, NULL}
 };
@@ -1764,6 +1845,7 @@ const luaL_Reg AP_GPS_meta[] = {
 };
 
 const luaL_Reg AP_BattMonitor_meta[] = {
+    {"get_cycle_count", AP_BattMonitor_get_cycle_count},
     {"get_temperature", AP_BattMonitor_get_temperature},
     {"overpower_detected", AP_BattMonitor_overpower_detected},
     {"has_failsafed", AP_BattMonitor_has_failsafed},
@@ -1837,6 +1919,7 @@ const struct userdata_meta userdata_fun[] = {
 };
 
 const struct userdata_meta singleton_fun[] = {
+    {"rc", RC_Channels_meta, NULL},
     {"SRV_Channels", SRV_Channels_meta, NULL},
     {"serialLED", AP_SerialLED_meta, NULL},
     {"vehicle", AP_Vehicle_meta, NULL},
@@ -1890,6 +1973,7 @@ void load_generated_bindings(lua_State *L) {
 }
 
 const char *singletons[] = {
+    "rc",
     "SRV_Channels",
     "serialLED",
     "vehicle",

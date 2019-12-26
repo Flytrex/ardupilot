@@ -350,6 +350,9 @@ protected:
     void handle_mission_write_partial_list(const mavlink_message_t &msg);
     void handle_mission_item(const mavlink_message_t &msg);
 
+    void handle_distance_sensor(const mavlink_message_t &msg);
+    void handle_obstacle_distance(const mavlink_message_t &msg);
+
     void handle_common_param_message(const mavlink_message_t &msg);
     void handle_param_set(const mavlink_message_t &msg);
     void handle_param_request_list(const mavlink_message_t &msg);
@@ -439,6 +442,8 @@ protected:
     MAV_RESULT handle_command_do_fence_enable(const mavlink_command_long_t &packet);
 
     void handle_optical_flow(const mavlink_message_t &msg);
+
+    MAV_RESULT handle_fixed_mag_cal_yaw(const mavlink_command_long_t &packet);
 
     // vehicle-overridable message send function
     virtual bool try_send_message(enum ap_message id);
@@ -948,6 +953,9 @@ private:
 
     // true if we have already allocated protocol objects:
     bool initialised_missionitemprotocol_objects;
+
+    // true if update_send has ever been called:
+    bool update_send_has_been_called;
 
     // handle passthru between two UARTs
     struct {
