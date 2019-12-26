@@ -336,7 +336,9 @@ void Copter::set_mode_SmartRTL_or_RTL(ModeReason reason)
 }
 
 bool Copter::should_disarm_on_failsafe() {
+#ifdef FTS
     return false; // In FTS mode, we don't want to disarm, unless we specifically initiated disarm command
+#endif
 
     if (ap.in_arming_delay) {
         return true;
@@ -359,8 +361,10 @@ bool Copter::should_disarm_on_failsafe() {
 
 
 void Copter::do_failsafe_action(Failsafe_Action action, ModeReason reason){
+#ifdef FTS
     // In FTS mode, we don't want to disarm unless we specifically initiated it by command
     return;
+#endif
 
     // Execute the specified desired_action
     switch (action) {

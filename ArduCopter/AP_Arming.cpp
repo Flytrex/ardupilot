@@ -858,7 +858,9 @@ bool AP_Arming_Copter::disarm()
 
     copter.ap.in_arming_delay = false;
 
+#ifdef FTS
     copter.parachute.enabled(true);
+#endif
 
     return true;
 }

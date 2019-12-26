@@ -168,8 +168,10 @@ void Copter::parachute_check()
 
     // return immediately if motors are not armed or pilot's throttle is above zero
     if (!motors->armed()) {
+#ifdef FTS
         // sending pwm signal
         parachute.servo_off();
+#endif
         control_loss_count = 0;
         return;
     }

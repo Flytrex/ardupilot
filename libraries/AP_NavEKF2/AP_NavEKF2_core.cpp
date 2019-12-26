@@ -624,6 +624,8 @@ void NavEKF2_core::UpdateFilter(bool predict)
         !hal.util->get_soft_armed()) {
         // we've been unhealthy for 5 seconds after being healthy, reset the filter
         gcs().send_text(MAV_SEVERITY_WARNING, "EKF2 IMU%u forced reset",(unsigned)imu_index);
+        // TODO: remove those warning lines below
+        // all these warnings are for debugging purposes only and should be removed later
         gcs().send_text(MAV_SEVERITY_WARNING, "attitude=%s", filterStatus.flags.attitude ? "true" : "false");
         gcs().send_text(MAV_SEVERITY_WARNING, "horiz_vel=%s", filterStatus.flags.horiz_vel ? "true" : "false");
         gcs().send_text(MAV_SEVERITY_WARNING, "vert_vel=%s", filterStatus.flags.vert_vel ? "true" : "false");

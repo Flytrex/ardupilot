@@ -3717,8 +3717,12 @@ MAV_RESULT GCS_MAVLINK::handle_command_long_packet(const mavlink_command_long_t 
     case MAV_CMD_COMPONENT_ARM_DISARM:
         if (is_equal(packet.param1,1.0f)) {
             // run pre_arm_checks and arm_checks and display failures
-            // const bool do_arming_checks = !is_equal(packet.param2,magic_force_arm_value);
+#ifdef FTS
             const bool do_arming_checks = false;  // In FTS mode, we skip all the arming checks
+#else
+            const bool do_arming_checks = !is_equal(packet.param2,magic_force_arm_value);
+#endif
+            
             if (AP::arming().is_armed() ||
                 AP::arming().arm(AP_Arming::Method::MAVLINK, do_arming_checks)) {
                 return MAV_RESULT_ACCEPTED;
