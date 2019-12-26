@@ -76,6 +76,11 @@ def options(opt):
         default=False,
         help='Configure as debug variant.')
 
+    g.add_option('--fts',
+        action='store_true',
+        default=False,
+        help='Configure as FTS variant.')
+
     g.add_option('--toolchain',
         action='store',
         default=None,

@@ -272,6 +272,12 @@ class Board:
             env.INCLUDES += [
                 cfg.srcnode.find_dir('modules/uavcan/libuavcan/include').abspath()
             ]
+        
+        if cfg.options.fts:
+            cfg.msg('Configuring FTS variant', 'yes')
+            env.DEFINES.update(
+                FTS = 1,
+            )
 
         if cfg.options.build_dates:
             env.build_dates = True
