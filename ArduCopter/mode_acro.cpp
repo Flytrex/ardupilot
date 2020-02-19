@@ -30,17 +30,20 @@ void ModeAcro::run()
         attitude_control->set_attitude_target_to_current_attitude();
         attitude_control->reset_rate_controller_I_terms();
         break;
+
     case AP_Motors::SpoolState::GROUND_IDLE:
         // Landed
         attitude_control->set_attitude_target_to_current_attitude();
         attitude_control->reset_rate_controller_I_terms();
         break;
+
     case AP_Motors::SpoolState::THROTTLE_UNLIMITED:
         // clear landing flag above zero throttle
         if (!motors->limit.throttle_lower) {
             set_land_complete(false);
         }
         break;
+
     case AP_Motors::SpoolState::SPOOLING_UP:
     case AP_Motors::SpoolState::SPOOLING_DOWN:
         // do nothing
@@ -56,6 +59,13 @@ void ModeAcro::run()
                                        copter.g.throttle_filt);
 }
 
+float ModeAcro::throttle_hover() const
+{
+    if (g2.acro_thr_mid > 0) {
+        return g2.acro_thr_mid;
+    }
+    return Mode::throttle_hover();
+}
 
 // get_pilot_desired_angle_rates - transform pilot's roll pitch and yaw input into a desired lean angle rates
 // returns desired angle rates in centi-degrees-per-second
@@ -104,7 +114,7 @@ void ModeAcro::get_pilot_desired_angle_rates(int16_t roll_in, int16_t pitch_in, 
 
     // calculate earth frame rate corrections to pull the copter back to level while in ACRO mode
 
-    if (g.acro_trainer != ACRO_TRAINER_DISABLED) {
+    if (g.acro_trainer != (uint8_t)Trainer::OFF) {
 
         // get attitude targets
         const Vector3f att_target = attitude_control->get_att_target_euler_cd();
@@ -121,7 +131,7 @@ void ModeAcro::get_pilot_desired_angle_rates(int16_t roll_in, int16_t pitch_in, 
         rate_ef_level.z = 0;
 
         // Calculate angle limiting earth frame rate commands
-        if (g.acro_trainer == ACRO_TRAINER_LIMITED) {
+        if (g.acro_trainer == (uint8_t)Trainer::LIMITED) {
             const float angle_max = copter.aparm.angle_max;
             if (roll_angle > angle_max){
                 rate_ef_level.x +=  AC_AttitudeControl::sqrt_controller(angle_max - roll_angle, g.acro_rp_p * 4.5, attitude_control->get_accel_roll_max(), G_Dt);
@@ -140,7 +150,7 @@ void ModeAcro::get_pilot_desired_angle_rates(int16_t roll_in, int16_t pitch_in, 
         attitude_control->euler_rate_to_ang_vel(attitude_control->get_att_target_euler_cd()*radians(0.01f), rate_ef_level, rate_bf_level);
 
         // combine earth frame rate corrections with rate requests
-        if (g.acro_trainer == ACRO_TRAINER_LIMITED) {
+        if (g.acro_trainer == (uint8_t)Trainer::LIMITED) {
             rate_bf_request.x += rate_bf_level.x;
             rate_bf_request.y += rate_bf_level.y;
             rate_bf_request.z += rate_bf_level.z;

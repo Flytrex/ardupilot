@@ -45,7 +45,7 @@ public:
     };
 
     // Constructor
-    AP_AHRS_NavEKF(NavEKF2 &_EKF2, NavEKF3 &_EKF3, Flags flags = FLAG_NONE);
+    AP_AHRS_NavEKF(NavEKF2 &_EKF2, NavEKF3 &_EKF3, uint8_t flags = FLAG_NONE);
 
     /* Do not allow copies */
     AP_AHRS_NavEKF(const AP_AHRS_NavEKF &other) = delete;
@@ -230,6 +230,10 @@ public:
     // position), false on failure
     bool get_location(struct Location &loc) const;
 
+    // return the innovations for the specified instance
+    // An out of range instance (eg -1) returns data for the primary instance
+    bool get_innovations(Vector3f &velInnov, Vector3f &posInnov, Vector3f &magInnov, float &tasInnov, float &yawInnov) const override;
+
     // get_variances - provides the innovations normalised using the innovation variance where a value of 0
     // indicates perfect consistency between the measurement and the EKF solution and a value of of 1 is the maximum
     // inconsistency that will be accepted by the filter
@@ -297,7 +301,7 @@ private:
     Vector3f _accel_ef_ekf_blended;
     const uint16_t startup_delay_ms = 1000;
     uint32_t start_time_ms = 0;
-    Flags _ekf_flags;
+    uint8_t _ekf_flags; // bitmask from Flags enumeration
 
     uint8_t ekf_type(void) const;
     void update_DCM(bool skip_ins_update);

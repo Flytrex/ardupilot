@@ -28,6 +28,7 @@
 #include "SIM_Gripper_EPM.h"
 #include "SIM_Parachute.h"
 #include "SIM_Precland.h"
+#include "SIM_Buzzer.h"
 #include <Filter/Filter.h>
 
 namespace SITL {
@@ -113,6 +114,7 @@ public:
     const Location &get_location() const { return location; }
 
     const Vector3f &get_position() const { return position; }
+    const float &get_range() const { return range; }
 
     void get_attitude(Quaternion &attitude) const {
         attitude.from_rotation_matrix(dcm);
@@ -121,6 +123,7 @@ public:
     const Location &get_home() const { return home; }
     float get_home_yaw() const { return home_yaw; }
 
+    void set_buzzer(Buzzer *_buzzer) { buzzer = _buzzer; }
     void set_sprayer(Sprayer *_sprayer) { sprayer = _sprayer; }
     void set_parachute(Parachute *_parachute) { parachute = _parachute; }
     void set_gripper_servo(Gripper_Servo *_gripper) { gripper = _gripper; }
@@ -152,8 +155,8 @@ protected:
     float airspeed_pitot;                // m/s, apparent airspeed, as seen by fwd pitot tube
     float battery_voltage = -1.0f;
     float battery_current = 0.0f;
-    float rpm1 = 0;
-    float rpm2 = 0;
+    uint8_t num_motors = 1;
+    float rpm[12];
     uint8_t rcin_chan_count = 0;
     float rcin[8];
     float range = -1.0f;                 // rangefinder detection in m
@@ -190,6 +193,8 @@ protected:
 
     // allow for AHRS_ORIENTATION
     AP_Int8 *ahrs_orientation;
+    enum Rotation last_imu_rotation;
+    Matrix3f ahrs_rotation_inv;
 
     enum GroundBehaviour {
         GROUND_BEHAVIOR_NONE = 0,
@@ -272,6 +277,7 @@ private:
 
     LowPassFilterFloat servo_filter[4];
 
+    Buzzer *buzzer;
     Sprayer *sprayer;
     Gripper_Servo *gripper;
     Gripper_EPM *gripper_epm;

@@ -172,6 +172,9 @@ public:
         CIRCLE    =           72, // circle mode
         DRIFT     =           73, // drift mode
         SAILBOAT_MOTOR_3POS = 74, // Sailboat motoring 3pos
+        SURFACE_TRACKING =    75, // Surface tracking upwards or downwards
+        STANDBY  =            76, // Standby mode
+        TAKEOFF   =           77, // takeoff
         KILL_IMU1 =          100, // disable first IMU (for IMU failure testing)
         KILL_IMU2 =          101, // disable second IMU (for IMU failure testing)
         // if you add something here, make sure to update the documentation of the parameter in RC_Channel.cpp!
@@ -194,6 +197,7 @@ protected:
     virtual void init_aux_function(aux_func_t ch_option, aux_switch_pos_t);
     virtual void do_aux_function(aux_func_t ch_option, aux_switch_pos_t);
 
+    void do_aux_function_avoid_adsb(const aux_switch_pos_t ch_flag);
     void do_aux_function_avoid_proximity(const aux_switch_pos_t ch_flag);
     void do_aux_function_camera_trigger(const aux_switch_pos_t ch_flag);
     void do_aux_function_fence(const aux_switch_pos_t ch_flag);
@@ -290,6 +294,8 @@ public:
     }
     //end compatability functions for Plane
 
+    // this function is implemented in the child class in the vehicle
+    // code
     virtual RC_Channel *channel(uint8_t chan) = 0;
 
     uint8_t get_radio_in(uint16_t *chans, const uint8_t num_channels); // reads a block of chanel radio_in values starting from channel 0
@@ -341,6 +347,13 @@ public:
         return _override_timeout.get() * 1e3f;
     }
 
+    /*
+      get the RC input PWM value given a channel number.  Note that
+      channel numbers start at 1, as this API is designed for use in
+      LUA
+    */
+    bool get_pwm(uint8_t channel, uint16_t &pwm) const;
+
 protected:
 
     enum class Option {
@@ -363,7 +376,7 @@ private:
     AP_Float _override_timeout;
     AP_Int32  _options;
 
-    // flight_mode_channel_number must be overridden:
+    // flight_mode_channel_number must be overridden in vehicle specific code
     virtual int8_t flight_mode_channel_number() const = 0;
     RC_Channel *flight_mode_channel();
 

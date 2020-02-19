@@ -104,6 +104,7 @@ void SRV_Channel::aux_servo_function_setup(void)
     case k_heli_tail_rsc:
     case k_motor_tilt:
     case k_boost_throttle:
+    case k_thrust_out:
         set_range(1000);
         break;
     case k_aileron_with_input:
@@ -124,6 +125,9 @@ void SRV_Channel::aux_servo_function_setup(void)
     case k_elevon_right:
     case k_vtail_left:
     case k_vtail_right:
+    case k_roll_out:
+    case k_pitch_out:
+    case k_yaw_out:
         set_angle(4500);
         break;
     case k_throttle:
@@ -313,7 +317,7 @@ SRV_Channels::copy_radio_in_out_mask(uint16_t mask)
 }
 
 /*
-  setup failsafe value for an auxiliary function type to a LimitValue
+  setup failsafe value for an auxiliary function type to a Limit
  */
 void
 SRV_Channels::set_failsafe_pwm(SRV_Channel::Aux_servo_function_t function, uint16_t pwm)
@@ -330,10 +334,10 @@ SRV_Channels::set_failsafe_pwm(SRV_Channel::Aux_servo_function_t function, uint1
 }
 
 /*
-  setup failsafe value for an auxiliary function type to a LimitValue
+  setup failsafe value for an auxiliary function type to a Limit
  */
 void
-SRV_Channels::set_failsafe_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::LimitValue limit)
+SRV_Channels::set_failsafe_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::Limit limit)
 {
     if (!function_assigned(function)) {
         return;
@@ -348,10 +352,10 @@ SRV_Channels::set_failsafe_limit(SRV_Channel::Aux_servo_function_t function, SRV
 }
 
 /*
-  setup safety value for an auxiliary function type to a LimitValue
+  setup safety value for an auxiliary function type to a Limit
  */
 void
-SRV_Channels::set_safety_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::LimitValue limit)
+SRV_Channels::set_safety_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::Limit limit)
 {
     if (!function_assigned(function)) {
         return;
@@ -366,10 +370,10 @@ SRV_Channels::set_safety_limit(SRV_Channel::Aux_servo_function_t function, SRV_C
 }
 
 /*
-  set radio output value for an auxiliary function type to a LimitValue
+  set radio output value for an auxiliary function type to a Limit
  */
 void
-SRV_Channels::set_output_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::LimitValue limit)
+SRV_Channels::set_output_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::Limit limit)
 {
     if (!function_assigned(function)) {
         return;

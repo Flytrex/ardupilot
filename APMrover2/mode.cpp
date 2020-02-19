@@ -209,17 +209,6 @@ bool Mode::set_desired_location(const struct Location& destination, float next_l
     return true;
 }
 
-// set desired heading and speed
-void Mode::set_desired_heading_and_speed(float yaw_angle_cd, float target_speed)
-{
-    // handle initialisation
-    _reached_destination = false;
-
-    // record targets
-    _desired_yaw_cd = yaw_angle_cd;
-    _desired_speed = target_speed;
-}
-
 // get default speed for this mode (held in WP_SPEED or RTL_SPEED)
 float Mode::get_speed_default(bool rtl) const
 {
@@ -228,22 +217,6 @@ float Mode::get_speed_default(bool rtl) const
     }
 
     return g2.wp_nav.get_default_speed();
-}
-
-// restore desired speed to default from parameter values (WP_SPEED)
-void Mode::set_desired_speed_to_default(bool rtl)
-{
-    _desired_speed = get_speed_default(rtl);
-}
-
-// set desired speed in m/s
-bool Mode::set_desired_speed(float speed)
-{
-    if (!is_negative(speed)) {
-        _desired_speed = speed;
-        return true;
-    }
-    return false;
 }
 
 // execute the mission in reverse (i.e. backing up)
@@ -335,6 +308,8 @@ float Mode::calc_speed_max(float cruise_speed, float cruise_throttle) const
     // sanity checks
     if (cruise_throttle > 1.0f || cruise_throttle < 0.05f) {
         speed_max = cruise_speed;
+    } else if (is_positive(g2.speed_max)) {
+        speed_max = g2.speed_max;
     } else {
         // project vehicle's maximum speed
         speed_max = (1.0f / cruise_throttle) * cruise_speed;
@@ -402,7 +377,9 @@ void Mode::navigate_to_waypoint()
     if (g2.sailboat.use_indirect_route(desired_heading_cd)) {
         // sailboats use heading controller when tacking upwind
         desired_heading_cd = g2.sailboat.calc_heading(desired_heading_cd);
-        calc_steering_to_heading(desired_heading_cd, g2.wp_nav.get_pivot_rate());
+        // use pivot turn rate for tacks
+        const float turn_rate = g2.sailboat.tacking() ? g2.wp_nav.get_pivot_rate() : 0.0f;
+        calc_steering_to_heading(desired_heading_cd, turn_rate);
     } else {
         // call turn rate steering controller
         calc_steering_from_turn_rate(g2.wp_nav.get_turn_rate_rads(), desired_speed, g2.wp_nav.get_reversed());
@@ -447,31 +424,6 @@ void Mode::calc_steering_to_heading(float desired_heading_cd, float rate_max_deg
                                                                          g2.motors.limit.steer_right,
                                                                          rover.G_Dt);
     set_steering(steering_out * 4500.0f);
-}
-
-// calculate vehicle stopping point using current location, velocity and maximum acceleration
-void Mode::calc_stopping_location(Location& stopping_loc)
-{
-    // default stopping location
-    stopping_loc = rover.current_loc;
-
-    // get current velocity vector and speed
-    const Vector2f velocity = ahrs.groundspeed_vector();
-    const float speed = velocity.length();
-
-    // avoid divide by zero
-    if (!is_positive(speed)) {
-        stopping_loc = rover.current_loc;
-        return;
-    }
-
-    // get stopping distance in meters
-    const float stopping_dist = attitude_control.get_stopping_distance(speed);
-
-    // calculate stopping position from current location in meters
-    const Vector2f stopping_offset = velocity.normalized() * stopping_dist;
-
-    stopping_loc.offset(stopping_offset.x, stopping_offset.y);
 }
 
 void Mode::set_steering(float steering_value)

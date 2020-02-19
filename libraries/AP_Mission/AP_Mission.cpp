@@ -538,6 +538,14 @@ bool AP_Mission::read_cmd_from_storage(uint16_t index, Mission_Command& cmd) con
     }
 
     if (stored_in_location(cmd.id)) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+        // NOTE!  no 16-bit command may be stored_in_location as only
+        // 10 bytes are available for storage and lat/lon/alt required
+        // 4*sizeof(float) == 12 bytes of storage.
+        if (b1 == 0) {
+            AP_HAL::panic("May not store location for 16-bit commands");
+        }
+#endif
         // Location is not PACKED; field-wise copy it:
         cmd.content.location.relative_alt = packed_content.location.flags.relative_alt;
         cmd.content.location.loiter_ccw = packed_content.location.flags.loiter_ccw;
@@ -993,15 +1001,18 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
 
         case MAV_FRAME_MISSION:
         case MAV_FRAME_GLOBAL:
+        case MAV_FRAME_GLOBAL_INT:
             cmd.content.location.relative_alt = 0;
             break;
 
         case MAV_FRAME_GLOBAL_RELATIVE_ALT:
+        case MAV_FRAME_GLOBAL_RELATIVE_ALT_INT:
             cmd.content.location.relative_alt = 1;
             break;
 
 #if AP_TERRAIN_AVAILABLE
         case MAV_FRAME_GLOBAL_TERRAIN_ALT:
+        case MAV_FRAME_GLOBAL_TERRAIN_ALT_INT:
             // we mark it as a relative altitude, as it doesn't have
             // home alt added
             cmd.content.location.relative_alt = 1;
@@ -1937,6 +1948,8 @@ const char *AP_Mission::Mission_Command::type() const {
         return "PayloadPlace";
     case MAV_CMD_DO_PARACHUTE:
         return "Parachute";
+    case MAV_CMD_DO_MOUNT_CONTROL:
+        return "MountControl";
 
     default:
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL

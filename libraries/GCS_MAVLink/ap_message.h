@@ -35,6 +35,7 @@ enum ap_message : uint8_t {
     MSG_SERVO_OUT,
     MSG_NEXT_MISSION_REQUEST_WAYPOINTS,
     MSG_NEXT_MISSION_REQUEST_RALLY,
+    MSG_NEXT_MISSION_REQUEST_FENCE,
     MSG_NEXT_PARAM,
     MSG_FENCE_STATUS,
     MSG_AHRS,
@@ -72,5 +73,6 @@ enum ap_message : uint8_t {
     MSG_NAMED_FLOAT,
     MSG_EXTENDED_SYS_STATE,
     MSG_AUTOPILOT_VERSION,
+    MSG_EFI_STATUS,
     MSG_LAST // MSG_LAST must be the last entry in this enum
 };

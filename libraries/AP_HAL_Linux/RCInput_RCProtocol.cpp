@@ -84,11 +84,12 @@ int RCInput_RCProtocol::open_115200(const char *path)
         return -1;
     }
 
-    tio.c_cflag &= ~(PARENB|CSTOPB|CSIZE);
-    tio.c_cflag |= CS8 | B115200;
+    tio.c_cflag &= ~(PARENB|CSTOPB|CSIZE|CBAUD);
+    tio.c_cflag |= CS8 | CREAD | CLOCAL | B115200;
 
     tio.c_lflag &= ~(ICANON|ECHO|ECHOE|ISIG);
     tio.c_iflag &= ~(IXON|IXOFF|IXANY);
+    tio.c_iflag &= ~(INLCR|ICRNL|IGNCR|IUCLC|BRKINT);
     tio.c_oflag &= ~OPOST;
 
     if (ioctl(fd, TCSETS2, &tio) != 0) {
@@ -119,7 +120,7 @@ void RCInput_RCProtocol::init()
     } else {
         fd_115200 = -1;
     }
-    rcp.init();
+    AP::RC().init();
     printf("SBUS FD %d  115200 FD %d\n", fd_sbus, fd_115200);
 }
 
@@ -131,7 +132,7 @@ void RCInput_RCProtocol::_timer_tick(void)
         ssize_t n = ::read(fd_sbus, &b[0], sizeof(b));
         if (n > 0) {
             for (uint8_t i=0; i<n; i++) {
-                rcp.process_byte(b[i], 100000);
+                AP::RC().process_byte(b[i], 100000);
             }
         }
     }
@@ -139,15 +140,15 @@ void RCInput_RCProtocol::_timer_tick(void)
         ssize_t n = ::read(fd_115200, &b[0], sizeof(b));
         if (n > 0) {
             for (uint8_t i=0; i<n; i++) {
-                rcp.process_byte(b[i], 115200);
+                AP::RC().process_byte(b[i], 115200);
             }
         }
     }
 
-    if (rcp.new_input()) {
-        uint8_t n = rcp.num_channels();
+    if (AP::RC().new_input()) {
+        uint8_t n = AP::RC().num_channels();
         for (uint8_t i=0; i<n; i++) {
-            _pwm_values[i] = rcp.read(i);
+            _pwm_values[i] = AP::RC().read(i);
         }
         _num_channels = n;
         rc_input_count++;

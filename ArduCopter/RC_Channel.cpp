@@ -20,7 +20,7 @@ void RC_Channel_Copter::mode_switch_changed(modeswitch_pos_t new_pos)
         return;
     }
 
-    if (!copter.set_mode((control_mode_t)copter.flight_modes[new_pos].get(), MODE_REASON_TX_COMMAND)) {
+    if (!copter.set_mode((Mode::Number)copter.flight_modes[new_pos].get(), ModeReason::RC_COMMAND)) {
         // alert user to mode change failure
         if (copter.ap.initialised) {
             AP_Notify::events.user_mode_change_failed = 1;
@@ -63,51 +63,52 @@ void RC_Channel_Copter::init_aux_function(const aux_func_t ch_option, const aux_
 {
     // init channel options
     switch(ch_option) {
-    case AUX_FUNC::SIMPLE_MODE:
-    case AUX_FUNC::RANGEFINDER:
-    case AUX_FUNC::SUPERSIMPLE_MODE:
-    case AUX_FUNC::ACRO_TRAINER:
-    case AUX_FUNC::PARACHUTE_ENABLE:
-    case AUX_FUNC::PARACHUTE_3POS:      // we trust the vehicle will be disarmed so even if switch is in release position the chute will not release
-    case AUX_FUNC::RETRACT_MOUNT:
-    case AUX_FUNC::ATTCON_FEEDFWD:
-    case AUX_FUNC::ATTCON_ACCEL_LIM:
-    case AUX_FUNC::MOTOR_INTERLOCK:
-    case AUX_FUNC::AVOID_ADSB:
-    case AUX_FUNC::PRECISION_LOITER:
-    case AUX_FUNC::INVERTED:
-    case AUX_FUNC::WINCH_ENABLE:
-        do_aux_function(ch_option, ch_flag);
-        break;
     // the following functions do not need to be initialised:
+    case AUX_FUNC::ALTHOLD:
+    case AUX_FUNC::ARMDISARM:
+    case AUX_FUNC::AUTO:
+    case AUX_FUNC::AUTOTUNE:
+    case AUX_FUNC::BRAKE:
+    case AUX_FUNC::CIRCLE:
+    case AUX_FUNC::DRIFT:
     case AUX_FUNC::FLIP:
+    case AUX_FUNC::FLOWHOLD:
+    case AUX_FUNC::FOLLOW:
+    case AUX_FUNC::GUIDED:
+    case AUX_FUNC::LAND:
+    case AUX_FUNC::LOITER:
+    case AUX_FUNC::PARACHUTE_RELEASE:
+    case AUX_FUNC::POSHOLD:
+    case AUX_FUNC::RESETTOARMEDYAW:
     case AUX_FUNC::RTL:
     case AUX_FUNC::SAVE_TRIM:
     case AUX_FUNC::SAVE_WP:
-    case AUX_FUNC::RESETTOARMEDYAW:
-    case AUX_FUNC::AUTO:
-    case AUX_FUNC::AUTOTUNE:
-    case AUX_FUNC::LAND:
-    case AUX_FUNC::BRAKE:
-    case AUX_FUNC::THROW:
     case AUX_FUNC::SMART_RTL:
-    case AUX_FUNC::GUIDED:
-    case AUX_FUNC::LOITER:
-    case AUX_FUNC::FOLLOW:
-    case AUX_FUNC::PARACHUTE_RELEASE:
-    case AUX_FUNC::ARMDISARM:
-    case AUX_FUNC::WINCH_CONTROL:
+    case AUX_FUNC::STABILIZE:
+    case AUX_FUNC::THROW:
     case AUX_FUNC::USER_FUNC1:
     case AUX_FUNC::USER_FUNC2:
     case AUX_FUNC::USER_FUNC3:
+    case AUX_FUNC::WINCH_CONTROL:
     case AUX_FUNC::ZIGZAG:
     case AUX_FUNC::ZIGZAG_SaveWP:
-    case AUX_FUNC::STABILIZE:
-    case AUX_FUNC::POSHOLD:
-    case AUX_FUNC::ALTHOLD:
-    case AUX_FUNC::FLOWHOLD:
-    case AUX_FUNC::CIRCLE:
-    case AUX_FUNC::DRIFT:
+        break;
+    case AUX_FUNC::ACRO_TRAINER:
+    case AUX_FUNC::ATTCON_ACCEL_LIM:
+    case AUX_FUNC::ATTCON_FEEDFWD:
+    case AUX_FUNC::INVERTED:
+    case AUX_FUNC::MOTOR_INTERLOCK:
+    case AUX_FUNC::PARACHUTE_3POS:      // we trust the vehicle will be disarmed so even if switch is in release position the chute will not release
+    case AUX_FUNC::PARACHUTE_ENABLE:
+    case AUX_FUNC::PRECISION_LOITER:
+    case AUX_FUNC::RANGEFINDER:
+    case AUX_FUNC::RETRACT_MOUNT:
+    case AUX_FUNC::SIMPLE_MODE:
+    case AUX_FUNC::STANDBY:
+    case AUX_FUNC::SUPERSIMPLE_MODE:
+    case AUX_FUNC::SURFACE_TRACKING:
+    case AUX_FUNC::WINCH_ENABLE:
+        do_aux_function(ch_option, ch_flag);
         break;
     default:
         RC_Channel::init_aux_function(ch_option, ch_flag);
@@ -117,13 +118,13 @@ void RC_Channel_Copter::init_aux_function(const aux_func_t ch_option, const aux_
 
 // do_aux_function_change_mode - change mode based on an aux switch
 // being moved
-void RC_Channel_Copter::do_aux_function_change_mode(const control_mode_t mode,
+void RC_Channel_Copter::do_aux_function_change_mode(const Mode::Number mode,
                                                      const aux_switch_pos_t ch_flag)
 {
     switch(ch_flag) {
     case HIGH: {
         // engage mode (if not possible we remain in current flight mode)
-        const bool success = copter.set_mode(mode, MODE_REASON_TX_COMMAND);
+        const bool success = copter.set_mode(mode, ModeReason::RC_COMMAND);
         if (copter.ap.initialised) {
             if (success) {
                 AP_Notify::events.user_mode_change = 1;
@@ -149,7 +150,7 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
         case AUX_FUNC::FLIP:
             // flip if switch is on, positive throttle and we're actually flying
             if (ch_flag == aux_switch_pos_t::HIGH) {
-                copter.set_mode(control_mode_t::FLIP, MODE_REASON_TX_COMMAND);
+                copter.set_mode(Mode::Number::FLIP, ModeReason::RC_COMMAND);
             }
             break;
 
@@ -165,12 +166,12 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
 
         case AUX_FUNC::RTL:
 #if MODE_RTL_ENABLED == ENABLED
-            do_aux_function_change_mode(control_mode_t::RTL, ch_flag);
+            do_aux_function_change_mode(Mode::Number::RTL, ch_flag);
 #endif
             break;
 
         case AUX_FUNC::SAVE_TRIM:
-            if ((ch_flag == HIGH) && (copter.control_mode <= control_mode_t::ACRO) && (copter.channel_throttle->get_control_in() == 0)) {
+            if ((ch_flag == HIGH) && (copter.control_mode <= Mode::Number::ACRO) && (copter.channel_throttle->get_control_in() == 0)) {
                 copter.save_trim();
             }
             break;
@@ -181,7 +182,7 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
             if (ch_flag == HIGH) {
 
                 // do not allow saving new waypoints while we're in auto or disarmed
-                if (copter.control_mode == control_mode_t::AUTO || !copter.motors->armed()) {
+                if (copter.control_mode == Mode::Number::AUTO || !copter.motors->armed()) {
                     return;
                 }
 
@@ -203,7 +204,7 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
                     // only altitude will matter to the AP mission script for takeoff.
                     if (copter.mode_auto.mission.add_cmd(cmd)) {
                         // log event
-                        copter.Log_Write_Event(DATA_SAVEWP_ADD_WP);
+                        AP::logger().Write_Event(LogEvent::SAVEWP_ADD_WP);
                     }
                 }
 
@@ -221,7 +222,7 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
                 // save command
                 if (copter.mode_auto.mission.add_cmd(cmd)) {
                     // log event
-                    copter.Log_Write_Event(DATA_SAVEWP_ADD_WP);
+                    AP::logger().Write_Event(LogEvent::SAVEWP_ADD_WP);
                 }
             }
 #endif
@@ -229,7 +230,7 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
 
         case AUX_FUNC::AUTO:
 #if MODE_AUTO_ENABLED == ENABLED
-            do_aux_function_change_mode(control_mode_t::AUTO, ch_flag);
+            do_aux_function_change_mode(Mode::Number::AUTO, ch_flag);
 #endif
             break;
 
@@ -248,16 +249,16 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
 #if MODE_ACRO_ENABLED == ENABLED
             switch(ch_flag) {
                 case LOW:
-                    copter.g.acro_trainer = ACRO_TRAINER_DISABLED;
-                    copter.Log_Write_Event(DATA_ACRO_TRAINER_DISABLED);
+                    copter.g.acro_trainer = (uint8_t)ModeAcro::Trainer::OFF;
+                    AP::logger().Write_Event(LogEvent::ACRO_TRAINER_OFF);
                     break;
                 case MIDDLE:
-                    copter.g.acro_trainer = ACRO_TRAINER_LEVELING;
-                    copter.Log_Write_Event(DATA_ACRO_TRAINER_LEVELING);
+                    copter.g.acro_trainer = (uint8_t)ModeAcro::Trainer::LEVELING;
+                    AP::logger().Write_Event(LogEvent::ACRO_TRAINER_LEVELING);
                     break;
                 case HIGH:
-                    copter.g.acro_trainer = ACRO_TRAINER_LIMITED;
-                    copter.Log_Write_Event(DATA_ACRO_TRAINER_LIMITED);
+                    copter.g.acro_trainer = (uint8_t)ModeAcro::Trainer::LIMITED;
+                    AP::logger().Write_Event(LogEvent::ACRO_TRAINER_LIMITED);
                     break;
             }
 #endif
@@ -265,24 +266,24 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
 
         case AUX_FUNC::AUTOTUNE:
 #if AUTOTUNE_ENABLED == ENABLED
-            do_aux_function_change_mode(control_mode_t::AUTOTUNE, ch_flag);
+            do_aux_function_change_mode(Mode::Number::AUTOTUNE, ch_flag);
 #endif
             break;
 
         case AUX_FUNC::LAND:
-            do_aux_function_change_mode(control_mode_t::LAND, ch_flag);
+            do_aux_function_change_mode(Mode::Number::LAND, ch_flag);
             break;
 
         case AUX_FUNC::GUIDED:
-            do_aux_function_change_mode(control_mode_t::GUIDED, ch_flag);
+            do_aux_function_change_mode(Mode::Number::GUIDED, ch_flag);
             break;
 
         case AUX_FUNC::LOITER:
-            do_aux_function_change_mode(control_mode_t::LOITER, ch_flag);
+            do_aux_function_change_mode(Mode::Number::LOITER, ch_flag);
             break;
 
         case AUX_FUNC::FOLLOW:
-            do_aux_function_change_mode(control_mode_t::FOLLOW, ch_flag);
+            do_aux_function_change_mode(Mode::Number::FOLLOW, ch_flag);
             break;
 
         case AUX_FUNC::PARACHUTE_ENABLE:
@@ -306,11 +307,11 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
             switch (ch_flag) {
                 case LOW:
                     copter.parachute.enabled(false);
-                    copter.Log_Write_Event(DATA_PARACHUTE_DISABLED);
+                    AP::logger().Write_Event(LogEvent::PARACHUTE_DISABLED);
                     break;
                 case MIDDLE:
                     copter.parachute.enabled(true);
-                    copter.Log_Write_Event(DATA_PARACHUTE_ENABLED);
+                    AP::logger().Write_Event(LogEvent::PARACHUTE_ENABLED);
                     break;
                 case HIGH:
                     copter.parachute.enabled(true);
@@ -354,26 +355,13 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
 
         case AUX_FUNC::BRAKE:
 #if MODE_BRAKE_ENABLED == ENABLED
-            do_aux_function_change_mode(control_mode_t::BRAKE, ch_flag);
+            do_aux_function_change_mode(Mode::Number::BRAKE, ch_flag);
 #endif
             break;
 
         case AUX_FUNC::THROW:
 #if MODE_THROW_ENABLED == ENABLED
-            do_aux_function_change_mode(control_mode_t::THROW, ch_flag);
-#endif
-            break;
-
-        case AUX_FUNC::AVOID_ADSB:
-#if ADSB_ENABLED == ENABLED
-            // enable or disable AP_Avoidance
-            if (ch_flag == HIGH) {
-                copter.avoidance_adsb.enable();
-                copter.Log_Write_Event(DATA_AVOIDANCE_ADSB_ENABLE);
-            } else {
-                copter.avoidance_adsb.disable();
-                copter.Log_Write_Event(DATA_AVOIDANCE_ADSB_DISABLE);
-            }
+            do_aux_function_change_mode(Mode::Number::THROW, ch_flag);
 #endif
             break;
 
@@ -412,7 +400,7 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
 
         case AUX_FUNC::SMART_RTL:
 #if MODE_SMARTRTL_ENABLED == ENABLED
-            do_aux_function_change_mode(control_mode_t::SMART_RTL, ch_flag);
+            do_aux_function_change_mode(Mode::Number::SMART_RTL, ch_flag);
 #endif
             break;
 
@@ -442,12 +430,12 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
                 case HIGH:
                     // high switch maintains current position
                     copter.g2.winch.release_length(0.0f);
-                    copter.Log_Write_Event(DATA_WINCH_LENGTH_CONTROL);
+                    AP::logger().Write_Event(LogEvent::WINCH_LENGTH_CONTROL);
                     break;
                 default:
                     // all other position relax winch
                     copter.g2.winch.relax();
-                    copter.Log_Write_Event(DATA_WINCH_RELAXED);
+                    AP::logger().Write_Event(LogEvent::WINCH_RELAXED);
                     break;
                 }
 #endif
@@ -487,7 +475,7 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
 
         case AUX_FUNC::ZIGZAG:
 #if MODE_ZIGZAG_ENABLED == ENABLED
-            do_aux_function_change_mode(control_mode_t::ZIGZAG, ch_flag);
+            do_aux_function_change_mode(Mode::Number::ZIGZAG, ch_flag);
 #endif
             break;
 
@@ -510,35 +498,65 @@ void RC_Channel_Copter::do_aux_function(const aux_func_t ch_option, const aux_sw
             break;
 
         case AUX_FUNC::STABILIZE:
-            do_aux_function_change_mode(control_mode_t::STABILIZE, ch_flag);
+            do_aux_function_change_mode(Mode::Number::STABILIZE, ch_flag);
             break;
 
         case AUX_FUNC::POSHOLD:
 #if MODE_POSHOLD_ENABLED == ENABLED
-            do_aux_function_change_mode(control_mode_t::POSHOLD, ch_flag);
+            do_aux_function_change_mode(Mode::Number::POSHOLD, ch_flag);
 #endif
             break;
 
         case AUX_FUNC::ALTHOLD:
-            do_aux_function_change_mode(control_mode_t::ALT_HOLD, ch_flag);
+            do_aux_function_change_mode(Mode::Number::ALT_HOLD, ch_flag);
             break;
 
 	case AUX_FUNC::FLOWHOLD:
 #if OPTFLOW == ENABLED
-            do_aux_function_change_mode(control_mode_t::FLOWHOLD, ch_flag);
+            do_aux_function_change_mode(Mode::Number::FLOWHOLD, ch_flag);
 #endif
             break;
 
         case AUX_FUNC::CIRCLE:
 #if MODE_CIRCLE_ENABLED == ENABLED
-            do_aux_function_change_mode(control_mode_t::CIRCLE, ch_flag);
+            do_aux_function_change_mode(Mode::Number::CIRCLE, ch_flag);
 #endif
             break;
 
         case AUX_FUNC::DRIFT:
 #if MODE_DRIFT_ENABLED == ENABLED
-            do_aux_function_change_mode(control_mode_t::DRIFT, ch_flag);
+            do_aux_function_change_mode(Mode::Number::DRIFT, ch_flag);
 #endif
+            break;
+
+        case AUX_FUNC::STANDBY: {
+            switch (ch_flag) {
+                case HIGH:
+                    copter.standby_active = true;
+                    AP::logger().Write_Event(LogEvent::STANDBY_ENABLE);
+                    gcs().send_text(MAV_SEVERITY_INFO, "Stand By Enabled");
+                    break;
+                default:
+                    copter.standby_active = false;
+                    AP::logger().Write_Event(LogEvent::STANDBY_DISABLE);
+                    gcs().send_text(MAV_SEVERITY_INFO, "Stand By Disabled");
+                    break;
+                }
+            break;
+        }
+
+        case AUX_FUNC::SURFACE_TRACKING:
+            switch (ch_flag) {
+            case LOW:
+                copter.surface_tracking.set_surface(Copter::SurfaceTracking::Surface::GROUND);
+                break;
+            case MIDDLE:
+                copter.surface_tracking.set_surface(Copter::SurfaceTracking::Surface::NONE);
+                break;
+            case HIGH:
+                copter.surface_tracking.set_surface(Copter::SurfaceTracking::Surface::CEILING);
+                break;
+            }
             break;
 
     default:
@@ -554,7 +572,7 @@ void Copter::save_trim()
     float roll_trim = ToRad((float)channel_roll->get_control_in()/100.0f);
     float pitch_trim = ToRad((float)channel_pitch->get_control_in()/100.0f);
     ahrs.add_trim(roll_trim, pitch_trim);
-    Log_Write_Event(DATA_SAVE_TRIM);
+    AP::logger().Write_Event(LogEvent::SAVE_TRIM);
     gcs().send_text(MAV_SEVERITY_INFO, "Trim saved");
 }
 

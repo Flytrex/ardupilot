@@ -25,7 +25,6 @@
 #include <AP_NavEKF/AP_Nav_Common.h>
 #include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_Compass/AP_Compass.h>
-#include <AP_RangeFinder/AP_RangeFinder.h>
 #include <AP_Logger/LogStructure.h>
 
 class NavEKF3_core;
@@ -35,7 +34,7 @@ class NavEKF3 {
     friend class NavEKF3_core;
 
 public:
-    NavEKF3(const AP_AHRS *ahrs, const RangeFinder &rng);
+    NavEKF3(const AP_AHRS *ahrs);
 
     /* Do not allow copies */
     NavEKF3(const NavEKF3 &other) = delete;
@@ -233,6 +232,7 @@ public:
      * timeStamp_ms is the time when the rotation was last measured (msec)
      * posOffset is the XYZ body frame position of the wheel hub (m)
      * radius is the effective rolling radius of the wheel (m)
+     * this should not be called at more than the EKF's update rate (50hz or 100hz)
     */
     void writeWheelOdom(float delAng, float delTime, uint32_t timeStamp_ms, const Vector3f &posOffset, float radius);
 
@@ -335,7 +335,7 @@ public:
     void getFilterStatus(int8_t instance, nav_filter_status &status) const;
 
     // send an EKF_STATUS_REPORT message to GCS
-    void send_status_report(mavlink_channel_t chan);
+    void send_status_report(mavlink_channel_t chan) const;
 
     // provides the height limit to be observed by the control loops
     // returns false if no height limiting is required
@@ -389,7 +389,6 @@ private:
     uint8_t primary;   // current primary core
     NavEKF3_core *core = nullptr;
     const AP_AHRS *_ahrs;
-    const RangeFinder &_rng;
 
     uint32_t _frameTimeUsec;        // time per IMU frame
     uint8_t  _framesPerPrediction;  // expected number of IMU frames per prediction
@@ -447,6 +446,8 @@ private:
     AP_Float _visOdmVelErrMin;      // Observation 1-STD velocity error assumed for visual odometry sensor at highest reported quality (m/s)
     AP_Float _wencOdmVelErr;        // Observation 1-STD velocity error assumed for wheel odometry sensor (m/s)
     AP_Int8  _flowUse;              // Controls if the optical flow data is fused into the main navigation estimator and/or the terrain estimator.
+    AP_Float _hrt_filt_freq;        // frequency of output observer height rate complementary filter in Hz
+    AP_Int16 _mag_ef_limit;         // limit on difference between WMM tables and learned earth field.
 
 // Possible values for _flowUse
 #define FLOW_USE_NONE    0
@@ -486,7 +487,6 @@ private:
     struct {
         bool enabled:1;
         bool log_compass:1;
-        bool log_gps:1;
         bool log_baro:1;
         bool log_imu:1;
     } logging;
@@ -496,7 +496,7 @@ private:
 
     // time of last lane switch
     uint32_t lastLaneSwitch_ms;
-    
+
     struct {
         uint32_t last_function_call;  // last time getLastYawYawResetAngle was called
         bool core_changed;            // true when a core change happened and hasn't been consumed, false otherwise
@@ -544,12 +544,12 @@ private:
     void updateLaneSwitchPosDownResetData(uint8_t new_primary, uint8_t old_primary);
 
     // logging functions shared by cores:
-    void Log_Write_EKF1(uint8_t core, LogMessages msg_id, uint64_t time_us) const;
-    void Log_Write_NKF2a(uint8_t core, LogMessages msg_id, uint64_t time_us) const;
-    void Log_Write_NKF3(uint8_t core, LogMessages msg_id, uint64_t time_us) const;
-    void Log_Write_NKF4(uint8_t core, LogMessages msg_id, uint64_t time_us) const;
-    void Log_Write_NKF5(uint64_t time_us) const;
-    void Log_Write_Quaternion(uint8_t core, LogMessages msg_id, uint64_t time_us) const;
+    void Log_Write_XKF1(uint8_t core, uint64_t time_us) const;
+    void Log_Write_XKF2(uint8_t core, uint64_t time_us) const;
+    void Log_Write_XKF3(uint8_t core, uint64_t time_us) const;
+    void Log_Write_XKF4(uint8_t core, uint64_t time_us) const;
+    void Log_Write_XKF5(uint64_t time_us) const;
+    void Log_Write_Quaternion(uint8_t core, uint64_t time_us) const;
     void Log_Write_Beacon(uint64_t time_us) const;
     void Log_Write_BodyOdom(uint64_t time_us) const;
     void Log_Write_State_Variances(uint64_t time_us) const;

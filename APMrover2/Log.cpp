@@ -1,6 +1,6 @@
 #include "Rover.h"
 
-#include <AP_RangeFinder/RangeFinder_Backend.h>
+#include <AP_RangeFinder/AP_RangeFinder_Backend.h>
 
 #if LOGGING_ENABLED == ENABLED
 
@@ -10,13 +10,13 @@ void Rover::Log_Write_Attitude()
     float desired_pitch_cd = degrees(g2.attitude_control.get_desired_pitch()) * 100.0f;
     const Vector3f targets(0.0f, desired_pitch_cd, 0.0f);
 
-    logger.Write_Attitude(ahrs, targets);
+    logger.Write_Attitude(targets);
 
 #if AP_AHRS_NAVEKF_AVAILABLE
     AP::ahrs_navekf().Log_Write();
-    logger.Write_AHRS2(ahrs);
+    logger.Write_AHRS2();
 #endif
-    logger.Write_POS(ahrs);
+    logger.Write_POS();
 
     // log steering rate controller
     logger.Write_PID(LOG_PIDS_MSG, g2.attitude_control.get_steering_rate_pid().get_pid_info());
@@ -133,12 +133,12 @@ void Rover::Log_Write_Sail()
     float wind_speed_true = logger.quiet_nanf();
     float wind_speed_apparent = logger.quiet_nanf();
     if (rover.g2.windvane.enabled()) {
-        wind_dir_abs = degrees(g2.windvane.get_absolute_wind_direction_rad());
+        wind_dir_abs = degrees(g2.windvane.get_true_wind_direction_rad());
         wind_dir_rel = degrees(g2.windvane.get_apparent_wind_direction_rad());
         wind_speed_true = g2.windvane.get_true_wind_speed();
         wind_speed_apparent = g2.windvane.get_apparent_wind_speed();
     }
-    logger.Write("SAIL", "TimeUS,WindDirAbs,WindDirApp,WindSpdTrue,WindSpdApp,SailOut,VMG",
+    logger.Write("SAIL", "TimeUS,WindDirTrue,WindDirApp,WindSpdTrue,WindSpdApp,SailOut,VMG",
                         "shhnn%n", "F000000", "Qffffff",
                         AP_HAL::micros64(),
                         (double)wind_dir_abs,

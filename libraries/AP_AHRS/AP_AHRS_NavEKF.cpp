@@ -37,12 +37,16 @@ extern const AP_HAL::HAL& hal;
 // constructor
 AP_AHRS_NavEKF::AP_AHRS_NavEKF(NavEKF2 &_EKF2,
                                NavEKF3 &_EKF3,
-                               Flags flags) :
+                               uint8_t flags) :
     AP_AHRS_DCM(),
     EKF2(_EKF2),
     EKF3(_EKF3),
     _ekf_flags(flags)
 {
+#if APM_BUILD_TYPE(APM_BUILD_ArduCopter) || APM_BUILD_TYPE(APM_BUILD_ArduSub)
+    // Copter and Sub force the use of EKF
+    _ekf_flags |= AP_AHRS_NavEKF::FLAG_ALWAYS_USE_EKF;
+#endif
     _dcm_matrix.identity();
 }
 
@@ -1639,6 +1643,38 @@ bool AP_AHRS_NavEKF::get_location(struct Location &loc) const
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     case EKF_TYPE_SITL:
         return get_position(loc);
+#endif
+    }
+}
+
+// return the innovations for the primariy EKF
+// boolean false is returned if innovations are not available
+bool AP_AHRS_NavEKF::get_innovations(Vector3f &velInnov, Vector3f &posInnov, Vector3f &magInnov, float &tasInnov, float &yawInnov) const
+{
+    switch (ekf_type()) {
+    case EKF_TYPE_NONE:
+        // We are not using an EKF so no data
+        return false;
+
+    case EKF_TYPE2:
+    default:
+        // use EKF to get innovations
+        EKF2.getInnovations(-1, velInnov, posInnov, magInnov, tasInnov, yawInnov);
+        return true;
+
+    case EKF_TYPE3:
+        // use EKF to get innovations
+        EKF3.getInnovations(-1, velInnov, posInnov, magInnov, tasInnov, yawInnov);
+        return true;
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    case EKF_TYPE_SITL:
+        velInnov.zero();
+        posInnov.zero();
+        magInnov.zero();
+        tasInnov = 0.0f;
+        yawInnov = 0.0f;
+        return true;
 #endif
     }
 }

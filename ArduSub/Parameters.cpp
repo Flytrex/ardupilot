@@ -560,7 +560,7 @@ const AP_Param::Info Sub::var_info[] = {
 
 #if RANGEFINDER_ENABLED == ENABLED
     // @Group: RNGFND
-    // @Path: ../libraries/AP_RangeFinder/RangeFinder.cpp
+    // @Path: ../libraries/AP_RangeFinder/AP_RangeFinder.cpp
     GOBJECT(rangefinder,   "RNGFND", RangeFinder),
 #endif
 
@@ -585,15 +585,6 @@ const AP_Param::Info Sub::var_info[] = {
     // @Group: NTF_
     // @Path: ../libraries/AP_Notify/AP_Notify.cpp
     GOBJECT(notify, "NTF_",  AP_Notify),
-
-#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
-    // @Param: TERRAIN_FOLLOW
-    // @DisplayName: Terrain Following use control
-    // @Description: This enables terrain following for RTL and SURFACE flight modes. To use this option TERRAIN_ENABLE must be 1 and the GCS must  support sending terrain data to the aircraft.  In RTL the RTL_ALT will be considered a height above the terrain.  In LAND mode the vehicle will slow to LAND_SPEED 10m above terrain (instead of 10m above home).  This parameter does not affect AUTO and Guided which use a per-command flag to determine if the height is above-home, absolute or above-terrain.
-    // @Values: 0:Do Not Use in RTL and SURFACE,1:Use in RTL and SURFACE
-    // @User: Standard
-    GSCALAR(terrain_follow, "TERRAIN_FOLLOW", 0),
-#endif
 
     // @Group:
     // @Path: Parameters.cpp
@@ -640,9 +631,6 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
   constructor for g2 object
  */
 ParametersG2::ParametersG2()
-#if PROXIMITY_ENABLED == ENABLED
-    : proximity(sub.serial_manager)
-#endif
 {
     AP_Param::setup_object_defaults(this, var_info);
 }
@@ -701,6 +689,9 @@ void Sub::load_parameters()
     AP_Param::set_default_by_name("INS_GYR_CAL", 0);
     AP_Param::set_default_by_name("MNT_DEFLT_MODE", MAV_MOUNT_MODE_RC_TARGETING);
     AP_Param::set_default_by_name("MNT_JSTICK_SPD", 100);
+    AP_Param::set_by_name("MNT_RC_IN_PAN", 7);
+    AP_Param::set_by_name("MNT_RC_IN_TILT", 8);
+    AP_Param::set_default_by_name("RNGFND1_TYPE", (uint8_t)RangeFinder::Type::MAVLink);
 }
 
 void Sub::convert_old_parameters()

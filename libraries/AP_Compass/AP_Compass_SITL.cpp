@@ -12,7 +12,9 @@ AP_Compass_SITL::AP_Compass_SITL()
         _compass._setup_earth_field();
         for (uint8_t i=0; i<SITL_NUM_COMPASSES; i++) {
             // default offsets to correct value
-            _compass.set_offsets(i, _sitl->mag_ofs);
+            if (_compass.get_offsets(i).is_zero()) {
+                _compass.set_offsets(i, _sitl->mag_ofs);
+            }
             
             _compass_instance[i] = register_compass();
             set_dev_id(_compass_instance[i], AP_HAL::Device::make_bus_id(AP_HAL::Device::BUS_TYPE_SITL, i, 0, DEVTYPE_SITL));
@@ -113,6 +115,9 @@ void AP_Compass_SITL::_timer()
             // rotate the first compass, allowing for testing of external compass rotation
             f.rotate_inverse((enum Rotation)_sitl->mag_orient.get());
             f.rotate(get_board_orientation());
+
+            // scale the first compass to simulate sensor scale factor errors
+            f *= _sitl->mag_scaling;
         }
         
         accumulate_sample(f, _compass_instance[i], 10);

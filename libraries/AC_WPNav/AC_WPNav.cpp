@@ -95,6 +95,23 @@ AC_WPNav::AC_WPNav(const AP_InertialNav& inav, const AP_AHRS_View& ahrs, AC_PosC
     _wp_radius_cm = MAX(_wp_radius_cm, WPNAV_WP_RADIUS_MIN);
 }
 
+// get expected source of terrain data if alt-above-terrain command is executed (used by Copter's ModeRTL)
+AC_WPNav::TerrainSource AC_WPNav::get_terrain_source() const
+{
+    // use range finder if connected
+    if (_rangefinder_available && _rangefinder_use) {
+        return AC_WPNav::TerrainSource::TERRAIN_FROM_RANGEFINDER;
+    }
+#if AP_TERRAIN_AVAILABLE
+    if ((_terrain != nullptr) && _terrain->enabled()) {
+        return AC_WPNav::TerrainSource::TERRAIN_FROM_TERRAINDATABASE;
+    } else {
+        return AC_WPNav::TerrainSource::TERRAIN_UNAVAILABLE;
+    }
+#else
+    return AC_WPNav::TerrainSource::TERRAIN_UNAVAILABLE;
+#endif
+}
 
 ///
 /// waypoint navigation
@@ -603,16 +620,19 @@ bool AC_WPNav::set_spline_destination(const Location& destination, bool stopped_
         return false;
     }
 
-    // make altitude frames consistent
-    if (!next_destination.change_alt_frame(destination.get_alt_frame())) {
-        return false;
-    }
+    Vector3f next_dest_neu; // left uninitialised for valgrind
+    if (seg_end_type == SEGMENT_END_STRAIGHT ||
+        seg_end_type == SEGMENT_END_SPLINE) {
+        // make altitude frames consistent
+        if (!next_destination.change_alt_frame(destination.get_alt_frame())) {
+            return false;
+        }
 
-    // convert next destination to vector
-    Vector3f next_dest_neu;
-    bool next_dest_terr_alt;
-    if (!get_vector_NEU(next_destination, next_dest_neu, next_dest_terr_alt)) {
-        return false;
+        // convert next destination to vector
+        bool next_dest_terr_alt;
+        if (!get_vector_NEU(next_destination, next_dest_neu, next_dest_terr_alt)) {
+            return false;
+        }
     }
 
     // set target as vector from EKF origin
@@ -938,23 +958,28 @@ void AC_WPNav::calc_spline_pos_vel(float spline_time, Vector3f& position, Vector
 // get terrain's altitude (in cm above the ekf origin) at the current position (+ve means terrain below vehicle is above ekf origin's altitude)
 bool AC_WPNav::get_terrain_offset(float& offset_cm)
 {
-    // use range finder if connected
-    if (_rangefinder_available && _rangefinder_use) {
+    // calculate offset based on source (rangefinder or terrain database)
+    switch (get_terrain_source()) {
+    case AC_WPNav::TerrainSource::TERRAIN_UNAVAILABLE:
+        return false;
+    case AC_WPNav::TerrainSource::TERRAIN_FROM_RANGEFINDER:
         if (_rangefinder_healthy) {
             offset_cm = _inav.get_altitude() - _rangefinder_alt_cm;
             return true;
         }
         return false;
+    case AC_WPNav::TerrainSource::TERRAIN_FROM_TERRAINDATABASE:
+#if AP_TERRAIN_AVAILABLE
+        float terr_alt = 0.0f;
+        if (_terrain != nullptr && _terrain->height_above_terrain(terr_alt, true)) {
+            offset_cm = _inav.get_altitude() - (terr_alt * 100.0f);
+            return true;
+        }
+#endif
+        return false;
     }
 
-#if AP_TERRAIN_AVAILABLE
-    // use terrain database
-    float terr_alt = 0.0f;
-    if (_terrain != nullptr && _terrain->height_above_terrain(terr_alt, true)) {
-        offset_cm = _inav.get_altitude() - (terr_alt * 100.0f);
-        return true;
-    }
-#endif
+    // we should never get here but just in case
     return false;
 }
 

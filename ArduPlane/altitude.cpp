@@ -126,7 +126,14 @@ float Plane::relative_ground_altitude(bool use_rangefinder_if_available)
 {
    if (use_rangefinder_if_available && rangefinder_state.in_range) {
         return rangefinder_state.height_estimate;
-    }
+   }
+
+   if (use_rangefinder_if_available && quadplane.in_vtol_land_final() &&
+       rangefinder.status_orient(ROTATION_PITCH_270) == RangeFinder::Status::OutOfRangeLow) {
+       // a special case for quadplane landing when rangefinder goes
+       // below minimum. Consider our height above ground to be zero
+       return 0;
+   }
 
 #if AP_TERRAIN_AVAILABLE
     float altitude;
@@ -595,6 +602,7 @@ void Plane::rangefinder_terrain_correction(float &height)
     }
     float correction = (terrain_amsl1 - terrain_amsl2);
     height += correction;
+    auto_state.terrain_correction = correction;
 #endif
 }
 
@@ -605,7 +613,7 @@ void Plane::rangefinder_height_update(void)
 {
     float distance = rangefinder.distance_cm_orient(ROTATION_PITCH_270)*0.01f;
     
-    if ((rangefinder.status_orient(ROTATION_PITCH_270) == RangeFinder::RangeFinder_Good) && ahrs.home_is_set()) {
+    if ((rangefinder.status_orient(ROTATION_PITCH_270) == RangeFinder::Status::Good) && ahrs.home_is_set()) {
         if (!rangefinder_state.have_initial_reading) {
             rangefinder_state.have_initial_reading = true;
             rangefinder_state.initial_range = distance;

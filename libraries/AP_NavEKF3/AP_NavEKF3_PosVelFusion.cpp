@@ -5,7 +5,8 @@
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <GCS_MAVLink/GCS.h>
-#include <AP_RangeFinder/RangeFinder_Backend.h>
+#include <AP_RangeFinder/AP_RangeFinder.h>
+#include <AP_RangeFinder/AP_RangeFinder_Backend.h>
 #include <AP_GPS/AP_GPS.h>
 #include <AP_Baro/AP_Baro.h>
 
@@ -157,6 +158,7 @@ void NavEKF3_core::ResetHeight(void)
     for (uint8_t i=0; i<imu_buffer_length; i++) {
         storedOutput[i].position.z = stateStruct.position.z;
     }
+    vertCompFiltState.pos = stateStruct.position.z;
 
     // Calculate the position jump due to the reset
     posResetD = stateStruct.position.z - posResetD;
@@ -187,6 +189,7 @@ void NavEKF3_core::ResetHeight(void)
     }
     outputDataNew.velocity.z = stateStruct.velocity.z;
     outputDataDelayed.velocity.z = stateStruct.velocity.z;
+    vertCompFiltState.vel = outputDataNew.velocity.z;
 
     // reset the corresponding covariances
     zeroRows(P,6,6);
@@ -339,6 +342,7 @@ void NavEKF3_core::SelectVelPosFusion()
 
             // Add the offset to the output observer states
             outputDataNew.position.z += posResetD;
+            vertCompFiltState.pos = outputDataNew.position.z;
             outputDataDelayed.position.z += posResetD;
             for (uint8_t i=0; i<imu_buffer_length; i++) {
                 storedOutput[i].position.z += posResetD;
@@ -777,8 +781,9 @@ void NavEKF3_core::selectHeightForFusion()
     // correct range data for the body frame position offset relative to the IMU
     // the corrected reading is the reading that would have been taken if the sensor was
     // co-located with the IMU
-    if (rangeDataToFuse) {
-        AP_RangeFinder_Backend *sensor = frontend->_rng.get_backend(rangeDataDelayed.sensor_idx);
+    const RangeFinder *_rng = AP::rangefinder();
+    if (_rng && rangeDataToFuse) {
+        AP_RangeFinder_Backend *sensor = _rng->get_backend(rangeDataDelayed.sensor_idx);
         if (sensor != nullptr) {
             Vector3f posOffsetBody = sensor->get_pos_offset() - accelPosOffset;
             if (!posOffsetBody.is_zero()) {
@@ -793,13 +798,13 @@ void NavEKF3_core::selectHeightForFusion()
     baroDataToFuse = storedBaro.recall(baroDataDelayed, imuDataDelayed.time_ms);
 
     // select height source
-    if (((frontend->_useRngSwHgt > 0) || (frontend->_altSource == 1)) && (imuSampleTime_ms - rngValidMeaTime_ms < 500)) {
+    if (_rng && ((frontend->_useRngSwHgt > 0) && (frontend->_altSource == 1)) && (imuSampleTime_ms - rngValidMeaTime_ms < 500)) {
         if (frontend->_altSource == 1) {
             // always use range finder
             activeHgtSource = HGT_SOURCE_RNG;
         } else {
             // determine if we are above or below the height switch region
-            float rangeMaxUse = 1e-4f * (float)frontend->_rng.max_distance_cm_orient(ROTATION_PITCH_270) * (float)frontend->_useRngSwHgt;
+            float rangeMaxUse = 1e-4f * (float)_rng->max_distance_cm_orient(ROTATION_PITCH_270) * (float)frontend->_useRngSwHgt;
             bool aboveUpperSwHgt = (terrainState - stateStruct.position.z) > rangeMaxUse;
             bool belowLowerSwHgt = (terrainState - stateStruct.position.z) < 0.7f * rangeMaxUse;
 

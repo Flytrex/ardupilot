@@ -24,8 +24,9 @@ static bool remount_needed;
 #define FATFS_X (S_IXUSR | S_IXGRP | S_IXOTH)	/*< FatFs Execute perms */
 
 // use a semaphore to ensure that only one filesystem operation is
-// happening at a time
-static HAL_Semaphore sem;
+// happening at a time. A recursive semaphore is used to cope with the
+// mkdir() inside sdcard_retry()
+static HAL_Semaphore_Recursive sem;
 
 typedef struct {
     FIL *fh;
@@ -35,7 +36,7 @@ typedef struct {
 #define MAX_FILES 16
 static FAT_FILE *file_table[MAX_FILES];
 
-static bool isatty(int fileno)
+static int isatty_(int fileno)
 {
     if (fileno >= 0 && fileno <= 2) {
         return true;
@@ -53,7 +54,7 @@ static int new_file_descriptor(const char *pathname)
     FIL *fh;
 
     for (i=0; i<MAX_FILES; ++i) {
-        if (isatty(i)) {
+        if (isatty_(i)) {
             continue;
         }
         if ( file_table[i] == NULL) {
@@ -108,7 +109,7 @@ static int free_file_descriptor(int fileno)
     FAT_FILE *stream;
     FIL *fh;
 
-    if (isatty( fileno )) {
+    if (isatty_( fileno )) {
         errno = EBADF;
         return -1;
     }
@@ -138,7 +139,7 @@ static FIL *fileno_to_fatfs(int fileno)
     FAT_FILE *stream;
     FIL *fh;
 
-    if (isatty( fileno )) {
+    if (isatty_( fileno )) {
         errno = EBADF;
         return nullptr;
     }
@@ -485,7 +486,7 @@ off_t AP_Filesystem::lseek(int fileno, off_t position, int whence)
         errno = EMFILE;
         return -1;
     }
-    if (isatty(fileno)) {
+    if (isatty_(fileno)) {
         return -1;
     }
 
@@ -715,6 +716,11 @@ struct dirent *AP_Filesystem::readdir(DIR *dirp)
     len = strlen(fno.fname);
     strncpy(d->de.d_name,fno.fname,len);
     d->de.d_name[len] = 0;
+    if (fno.fattrib & AM_DIR) {
+        d->de.d_type = DT_DIR;
+    } else {
+        d->de.d_type = DT_REG;
+    }
     return &d->de;
 }
 

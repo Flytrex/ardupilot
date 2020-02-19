@@ -69,6 +69,7 @@ public:
         Notify_LED_UAVCAN                   = (1 << 5), // UAVCAN RGB LED
         Notify_LED_NCP5623_I2C_External     = (1 << 6), // External NCP5623
         Notify_LED_NCP5623_I2C_Internal     = (1 << 7), // Internal NCP5623
+        Notify_LED_NeoPixel                 = (1 << 8), // NeoPixel 5050 AdaFruit 1655 SK6812  Worldsemi WS2812B
         Notify_LED_MAX
     };
 
@@ -137,6 +138,9 @@ public:
     // handle a LED_CONTROL message
     static void handle_led_control(const mavlink_message_t &msg);
 
+    // handle RGB from Scripting
+    static void handle_rgb(uint8_t r, uint8_t g, uint8_t b, uint8_t rate_hz = 0);
+
     // handle a PLAY_TUNE message
     static void handle_play_tune(const mavlink_message_t &msg);
 
@@ -157,6 +161,7 @@ public:
     static const struct AP_Param::GroupInfo var_info[];
     uint8_t get_buzz_pin() const  { return _buzzer_pin; }
     uint8_t get_buzz_level() const  { return _buzzer_level; }
+    uint8_t get_buzz_volume() const  { return _buzzer_volume; }
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     HAL_Semaphore sf_window_mutex;
@@ -180,6 +185,7 @@ private:
     AP_Int8 _buzzer_pin;
     AP_Int32 _led_type;
     AP_Int8 _buzzer_level;
+    AP_Int8 _buzzer_volume;
 
     char _send_text[NOTIFY_TEXT_BUFFER_SIZE];
     uint32_t _send_text_updated_millis; // last time text changed

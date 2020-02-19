@@ -25,9 +25,7 @@ class AP_RCProtocol_Backend;
 
 class AP_RCProtocol {
 public:
-    AP_RCProtocol() {
-        _singleton = this;
-    }
+    AP_RCProtocol() {}
     ~AP_RCProtocol();
 
     enum rcprotocol_t {
@@ -49,6 +47,7 @@ public:
     void process_pulse(uint32_t width_s0, uint32_t width_s1);
     void process_pulse_list(const uint32_t *widths, uint16_t n, bool need_swap);
     void process_byte(uint8_t byte, uint32_t baudrate);
+    void update(void);
 
     void disable_for_pulses(enum rcprotocol_t protocol) {
         _disabled_for_pulses |= (1U<<(uint8_t)protocol);
@@ -58,11 +57,7 @@ public:
     bool requires_3_frames(enum rcprotocol_t p) {
         return (p == DSM || p == SBUS || p == SBUS_NI || p == PPM);
     }
-    
-    enum rcprotocol_t protocol_detected()
-    {
-        return _detected_protocol;
-    }
+
     uint8_t num_channels();
     uint16_t read(uint8_t chan);
     bool new_input();
@@ -74,17 +69,17 @@ public:
     // return protocol name as a string
     const char *protocol_name(void) const;
 
-    // return protocol name as a string
+    // return detected protocol
     enum rcprotocol_t protocol_detected(void) const {
         return _detected_protocol;
     }
-    
-    // access to singleton
-    static AP_RCProtocol *get_singleton(void) {
-        return _singleton;
-    }
+
+    // add a UART for RCIN
+    void add_uart(AP_HAL::UARTDriver* uart);
 
 private:
+    void check_added_uart(void);
+
     enum rcprotocol_t _detected_protocol = NONE;
     uint16_t _disabled_for_pulses;
     bool _detected_with_bytes;
@@ -94,7 +89,17 @@ private:
     bool _valid_serial_prot = false;
     uint8_t _good_frames[NONE];
 
-    static AP_RCProtocol *_singleton;
+    // optional additional uart
+    struct {
+        AP_HAL::UARTDriver *uart;
+        uint32_t baudrate;
+        bool opened;
+        uint32_t last_baud_change_ms;
+    } added;
+};
+
+namespace AP {
+    AP_RCProtocol &RC();
 };
 
 #include "AP_RCProtocol_Backend.h"

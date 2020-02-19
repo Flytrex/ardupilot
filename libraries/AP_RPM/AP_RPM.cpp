@@ -16,6 +16,7 @@
 #include "AP_RPM.h"
 #include "RPM_Pin.h"
 #include "RPM_SITL.h"
+#include "RPM_EFI.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -24,7 +25,7 @@ const AP_Param::GroupInfo AP_RPM::var_info[] = {
     // @Param: _TYPE
     // @DisplayName: RPM type
     // @Description: What type of RPM sensor is connected
-    // @Values: 0:None,1:PX4-PWM,2:AUXPIN
+    // @Values: 0:None,1:PWM,2:AUXPIN,3:EFI
     // @User: Standard
     AP_GROUPINFO("_TYPE",    0, AP_RPM, _type[0], 0),
 
@@ -67,7 +68,7 @@ const AP_Param::GroupInfo AP_RPM::var_info[] = {
     // @Param: 2_TYPE
     // @DisplayName: Second RPM type
     // @Description: What type of RPM sensor is connected
-    // @Values: 0:None,1:PX4-PWM,2:AUXPIN
+    // @Values: 0:None,1:PWM,2:AUXPIN
     // @User: Advanced
     AP_GROUPINFO("2_TYPE",    10, AP_RPM, _type[1], 0),
 
@@ -110,16 +111,24 @@ void AP_RPM::init(void)
     }
     for (uint8_t i=0; i<RPM_MAX_INSTANCES; i++) {
         uint8_t type = _type[i];
-
-        if (type == RPM_TYPE_PX4_PWM) {
-            // on non-PX4 treat PX4-pin as AUXPIN option, for upgrade
+#if CONFIG_HAL_BOARD != HAL_BOARD_SITL
+        if (type == RPM_TYPE_PWM) {
+            // PWM option same as PIN option, for upgrade
             type = RPM_TYPE_PIN;
         }
         if (type == RPM_TYPE_PIN) {
             drivers[i] = new AP_RPM_Pin(*this, i, state[i]);
         }
+#endif
+#if EFI_ENABLED
+        if (type == RPM_TYPE_EFI) {
+            drivers[i] = new AP_RPM_EFI(*this, i, state[i]);
+        }
+#endif
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-        drivers[i] = new AP_RPM_SITL(*this, i, state[i]);
+        if (drivers[i] == nullptr) {
+            drivers[i] = new AP_RPM_SITL(*this, i, state[i]);
+        }
 #endif
         if (drivers[i] != nullptr) {
             // we loaded a driver for this instance, so it must be

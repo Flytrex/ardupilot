@@ -143,15 +143,23 @@ public:
         k_scripting14           = 107,
         k_scripting15           = 108,
         k_scripting16           = 109,
+        k_LED_neopixel1         = 120,
+        k_LED_neopixel2         = 121,
+        k_LED_neopixel3         = 122,
+        k_LED_neopixel4         = 123,
+        k_roll_out              = 124,
+        k_pitch_out             = 125,
+        k_thrust_out            = 126,
+        k_yaw_out               = 127,
         k_nr_aux_servo_functions         ///< This must be the last enum value (only add new values _before_ this one)
     } Aux_servo_function_t;
 
     // used to get min/max/trim limit value based on reverse
-    enum LimitValue {
-        SRV_CHANNEL_LIMIT_TRIM,
-        SRV_CHANNEL_LIMIT_MIN,
-        SRV_CHANNEL_LIMIT_MAX,
-        SRV_CHANNEL_LIMIT_ZERO_PWM
+    enum class Limit {
+        TRIM,
+        MIN,
+        MAX,
+        ZERO_PWM
     };
 
     // set the output value as a pwm value
@@ -261,7 +269,7 @@ private:
     void aux_servo_function_setup(void);
 
     // return PWM for a given limit value
-    uint16_t get_limit_pwm(LimitValue limit) const;
+    uint16_t get_limit_pwm(Limit limit) const;
 
     // get normalised output from -1 to 1
     float get_output_norm(void);
@@ -343,11 +351,6 @@ public:
     // save trims
     void save_trim(void);
 
-    // setup for a reversible k_throttle (from -100 to 100)
-    void set_reversible_throttle(void) {
-        flags.k_throttle_reversible = true;
-    }
-
     // setup IO failsafe for all channels to trim
     static void setup_failsafe_trim_all_non_motors(void);
 
@@ -382,13 +385,13 @@ public:
     static void set_failsafe_pwm(SRV_Channel::Aux_servo_function_t function, uint16_t pwm);
 
     // setup failsafe for an auxiliary channel function
-    static void set_failsafe_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::LimitValue limit);
+    static void set_failsafe_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::Limit limit);
 
     // setup safety for an auxiliary channel function (used when disarmed)
-    static void set_safety_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::LimitValue limit);
+    static void set_safety_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::Limit limit);
 
-    // set servo to a LimitValue
-    static void set_output_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::LimitValue limit);
+    // set servo to a Limit
+    static void set_output_limit(SRV_Channel::Aux_servo_function_t function, SRV_Channel::Limit limit);
 
     // return true if a function is assigned to a channel
     static bool function_assigned(SRV_Channel::Aux_servo_function_t function);
@@ -479,10 +482,12 @@ public:
     // get E - stop
     static bool get_emergency_stop() { return emergency_stop;}
 
+    // singleton for Lua
+    static SRV_Channels *get_singleton(void) {
+        return _singleton;
+    }
+
 private:
-    struct {
-        bool k_throttle_reversible:1;
-    } flags;
 
     static bool disabled_passthrough;
 

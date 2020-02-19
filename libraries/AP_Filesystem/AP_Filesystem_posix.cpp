@@ -20,7 +20,11 @@
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL || CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 
+#if defined(__APPLE__)
+#include <sys/mount.h>
+#else
 #include <sys/vfs.h>
+#endif
 #include <utime.h>
 
 extern const AP_HAL::HAL& hal;
@@ -63,7 +67,13 @@ int AP_Filesystem::stat(const char *pathname, struct stat *stbuf)
 
 int AP_Filesystem::unlink(const char *pathname)
 {
-    return ::unlink(pathname);
+    // we match the FATFS interface and use unlink
+    // for both files and directories
+    int ret = ::rmdir(pathname);
+    if (ret == -1) {
+        ret = ::unlink(pathname);
+    }
+    return ret;
 }
 
 int AP_Filesystem::mkdir(const char *pathname)
